@@ -6,7 +6,9 @@ import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { getStoredUser } from "@/lib/auth";
 import Login from "./pages/auth/Login";
 import AdminDashboard from "./pages/admin/Dashboard";
+import AdminFaceManagement from "./pages/admin/FaceManagement";
 import FacultyDashboard from "./pages/faculty/Dashboard";
+import FacultyFaceAttendance from "./pages/faculty/FaceAttendancePage";
 import StudentDashboard from "./pages/student/Dashboard";
 import NotFound from "./pages/NotFound";
 
@@ -58,6 +60,14 @@ const App = () => {
                 </ProtectedRoute>
               }
             />
+            <Route
+              path="/admin/face-management"
+              element={
+                <ProtectedRoute allowedRole="admin">
+                  <AdminFaceManagement />
+                </ProtectedRoute>
+              }
+            />
             
             {/* Faculty Routes */}
             <Route
@@ -65,6 +75,14 @@ const App = () => {
               element={
                 <ProtectedRoute allowedRole="faculty">
                   <FacultyDashboard />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/faculty/face-attendance"
+              element={
+                <ProtectedRoute allowedRole="faculty">
+                  <FacultyFaceAttendance />
                 </ProtectedRoute>
               }
             />

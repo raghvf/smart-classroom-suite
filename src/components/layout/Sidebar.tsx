@@ -13,6 +13,7 @@ import {
   BookOpenCheck,
   BarChart3,
   MessageSquare,
+  ScanFace,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -23,6 +24,7 @@ interface SidebarProps {
 
 const adminLinks = [
   { to: "/admin/dashboard", label: "Dashboard", icon: LayoutDashboard },
+  { to: "/admin/face-management", label: "Face Recognition", icon: ScanFace },
   { to: "/admin/students", label: "Students", icon: Users },
   { to: "/admin/faculty", label: "Faculty", icon: UserCog },
   { to: "/admin/timetable", label: "Timetable", icon: Calendar },
@@ -34,6 +36,7 @@ const adminLinks = [
 
 const facultyLinks = [
   { to: "/faculty/dashboard", label: "Dashboard", icon: LayoutDashboard },
+  { to: "/faculty/face-attendance", label: "Face Attendance", icon: ScanFace },
   { to: "/faculty/classes", label: "My Classes", icon: GraduationCap },
   { to: "/faculty/attendance", label: "Attendance", icon: BookOpenCheck },
   { to: "/faculty/analytics", label: "Analytics", icon: BarChart3 },
