@@ -7,6 +7,7 @@ import { getStoredUser } from "@/lib/auth";
 import Login from "./pages/auth/Login";
 import AdminDashboard from "./pages/admin/Dashboard";
 import AdminFaceManagement from "./pages/admin/FaceManagement";
+import AdminStudents from "./pages/admin/Students";
 import FacultyDashboard from "./pages/faculty/Dashboard";
 import FacultyFaceAttendance from "./pages/faculty/FaceAttendancePage";
 import StudentDashboard from "./pages/student/Dashboard";
@@ -65,6 +66,14 @@ const App = () => {
               element={
                 <ProtectedRoute allowedRole="admin">
                   <AdminFaceManagement />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/admin/students"
+              element={
+                <ProtectedRoute allowedRole="admin">
+                  <AdminStudents />
                 </ProtectedRoute>
               }
             />
