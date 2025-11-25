@@ -1,3 +1,5 @@
+import { supabase } from "@/integrations/supabase/client";
+
 export type UserRole = 'admin' | 'faculty' | 'student';
 
 export interface User {
@@ -8,36 +10,59 @@ export interface User {
   avatar?: string;
 }
 
-// Mock authentication - replace with real auth later
-export const mockLogin = async (email: string, password: string): Promise<User | null> => {
-  // Simulate API delay
-  await new Promise(resolve => setTimeout(resolve, 800));
-
-  // Mock users for testing
-  const mockUsers: Record<string, User> = {
-    'admin@classroom.edu': {
-      id: '1',
-      email: 'admin@classroom.edu',
-      name: 'Admin User',
-      role: 'admin',
-    },
-    'faculty@classroom.edu': {
-      id: '2',
-      email: 'faculty@classroom.edu',
-      name: 'Dr. Sarah Johnson',
-      role: 'faculty',
-    },
-    'student@classroom.edu': {
-      id: '3',
-      email: 'student@classroom.edu',
-      name: 'John Smith',
-      role: 'student',
-    },
-  };
-
-  return mockUsers[email] || null;
+export const signUp = async (email: string, password: string, name: string) => {
+  const { data, error } = await supabase.auth.signUp({
+    email,
+    password,
+    options: {
+      data: { name },
+      emailRedirectTo: `${window.location.origin}/`
+    }
+  });
+  return { data, error };
 };
 
+export const signIn = async (email: string, password: string) => {
+  const { data, error } = await supabase.auth.signInWithPassword({
+    email,
+    password
+  });
+  return { data, error };
+};
+
+export const signOut = async () => {
+  const { error } = await supabase.auth.signOut();
+  return { error };
+};
+
+export const getCurrentUser = async (): Promise<User | null> => {
+  const { data: { session } } = await supabase.auth.getSession();
+  if (!session) return null;
+
+  const { data: profile } = await supabase
+    .from('profiles')
+    .select('*')
+    .eq('id', session.user.id)
+    .single();
+
+  if (!profile) return null;
+
+  const { data: userRole } = await supabase
+    .from('user_roles')
+    .select('role')
+    .eq('user_id', session.user.id)
+    .single();
+
+  return {
+    id: profile.id,
+    email: profile.email,
+    name: profile.name,
+    role: userRole?.role || 'student',
+    avatar: profile.avatar
+  };
+};
+
+// Legacy functions for backwards compatibility
 export const getStoredUser = (): User | null => {
   const userStr = localStorage.getItem('user');
   return userStr ? JSON.parse(userStr) : null;

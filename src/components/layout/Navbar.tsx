@@ -9,9 +9,8 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { User as UserType } from "@/lib/auth";
+import { User as UserType, clearStoredUser, signOut } from "@/lib/auth";
 import { useNavigate } from "react-router-dom";
-import { clearStoredUser } from "@/lib/auth";
 
 interface NavbarProps {
   user: UserType;
@@ -21,7 +20,8 @@ interface NavbarProps {
 export function Navbar({ user, onToggleSidebar }: NavbarProps) {
   const navigate = useNavigate();
 
-  const handleLogout = () => {
+  const handleLogout = async () => {
+    await signOut();
     clearStoredUser();
     navigate("/auth/login");
   };
