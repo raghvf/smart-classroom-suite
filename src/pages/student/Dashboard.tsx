@@ -2,10 +2,13 @@ import { MainLayout } from "@/components/layout/MainLayout";
 import { getStoredUser } from "@/lib/auth";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
-import { Calendar, BookOpen, TrendingUp } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Calendar, BookOpen, TrendingUp, MessageSquare } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 
 export default function StudentDashboard() {
   const user = getStoredUser();
+  const navigate = useNavigate();
 
   if (!user || user.role !== "student") {
     window.location.href = "/auth/login";
@@ -15,9 +18,15 @@ export default function StudentDashboard() {
   return (
     <MainLayout user={user}>
       <div className="space-y-6">
-        <div>
-          <h2 className="text-3xl font-bold tracking-tight">Student Dashboard</h2>
-          <p className="text-muted-foreground">Track your academic progress</p>
+        <div className="flex items-center justify-between">
+          <div>
+            <h2 className="text-3xl font-bold tracking-tight">Student Dashboard</h2>
+            <p className="text-muted-foreground">Track your academic progress</p>
+          </div>
+          <Button onClick={() => navigate("/student/chat")} className="gap-2">
+            <MessageSquare className="w-4 h-4" />
+            Ask AI Assistant
+          </Button>
         </div>
 
         <div className="grid gap-4 md:grid-cols-3">

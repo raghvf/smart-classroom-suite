@@ -9,6 +9,7 @@ import AdminDashboard from "./pages/admin/Dashboard";
 import AdminFaceManagement from "./pages/admin/FaceManagement";
 import AdminStudents from "./pages/admin/Students";
 import FacultyDashboard from "./pages/faculty/Dashboard";
+import StudentChatPage from "./pages/student/ChatPage";
 import FacultyFaceAttendance from "./pages/faculty/FaceAttendancePage";
 import StudentDashboard from "./pages/student/Dashboard";
 import NotFound from "./pages/NotFound";
@@ -102,6 +103,14 @@ const App = () => {
               element={
                 <ProtectedRoute allowedRole="student">
                   <StudentDashboard />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/student/chat"
+              element={
+                <ProtectedRoute allowedRole="student">
+                  <StudentChatPage />
                 </ProtectedRoute>
               }
             />
