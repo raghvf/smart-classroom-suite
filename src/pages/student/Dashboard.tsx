@@ -3,7 +3,7 @@ import { getStoredUser } from "@/lib/auth";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { Button } from "@/components/ui/button";
-import { Calendar, BookOpen, TrendingUp, MessageSquare } from "lucide-react";
+import { Calendar, BookOpen, TrendingUp, MessageSquare, Brain } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 
 export default function StudentDashboard() {
@@ -23,10 +23,16 @@ export default function StudentDashboard() {
             <h2 className="text-3xl font-bold tracking-tight">Student Dashboard</h2>
             <p className="text-muted-foreground">Track your academic progress</p>
           </div>
-          <Button onClick={() => navigate("/student/chat")} className="gap-2">
-            <MessageSquare className="w-4 h-4" />
-            Ask AI Assistant
-          </Button>
+          <div className="flex gap-2">
+            <Button onClick={() => navigate("/student/attendance-insights")} variant="outline" className="gap-2">
+              <Brain className="w-4 h-4" />
+              AI Insights
+            </Button>
+            <Button onClick={() => navigate("/student/chat")} className="gap-2">
+              <MessageSquare className="w-4 h-4" />
+              Ask Assistant
+            </Button>
+          </div>
         </div>
 
         <div className="grid gap-4 md:grid-cols-3">
