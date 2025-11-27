@@ -1,31 +1,91 @@
-import { useState } from 'react';
-import { MainLayout } from '@/components/layout/MainLayout';
-import { FaceRegistration } from '@/components/FaceRegistration';
-import { Button } from '@/components/ui/button';
-import { Card } from '@/components/ui/card';
-import { Trash2, Users } from 'lucide-react';
-import { getAllStoredFaces, deleteFaceData } from '@/lib/faceRecognition';
-import { useToast } from '@/hooks/use-toast';
-import { getStoredUser } from '@/lib/auth';
-import { Navigate } from 'react-router-dom';
+import { useState, useEffect } from "react";
+import { MainLayout } from "@/components/layout/MainLayout";
+import { FaceRegistration } from "@/components/FaceRegistration";
+import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
+import { Trash2, Users, RefreshCw } from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
+import { getStoredUser } from "@/lib/auth";
+import { Navigate } from "react-router-dom";
+import { supabase } from "@/integrations/supabase/client";
+
+interface FaceRecord {
+  id: string;
+  student_id: string;
+  descriptors: number[][];
+  students: {
+    student_id: string;
+    profiles: {
+      name: string;
+    };
+  };
+}
 
 export default function FaceManagement() {
   const user = getStoredUser();
-  const [refresh, setRefresh] = useState(0);
+  const [faceData, setFaceData] = useState<FaceRecord[]>([]);
+  const [loading, setLoading] = useState(true);
   const { toast } = useToast();
-  const storedFaces = getAllStoredFaces();
 
-  if (!user || user.role !== 'admin') {
+  if (!user || user.role !== "admin") {
     return <Navigate to="/auth/login" replace />;
   }
 
-  const handleDelete = (studentId: string) => {
-    deleteFaceData(studentId);
-    toast({
-      title: 'Deleted',
-      description: 'Student face data removed',
-    });
-    setRefresh(prev => prev + 1);
+  const fetchFaceData = async () => {
+    setLoading(true);
+    try {
+      const { data, error } = await supabase
+        .from("face_data")
+        .select(`
+          id,
+          student_id,
+          descriptors,
+          students (
+            student_id,
+            profiles (
+              name
+            )
+          )
+        `)
+        .order("created_at", { ascending: false });
+
+      if (error) throw error;
+      setFaceData((data || []) as FaceRecord[]);
+    } catch (error) {
+      console.error("Error fetching face data:", error);
+      toast({
+        title: "Error",
+        description: "Failed to load face data",
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchFaceData();
+  }, []);
+
+  const handleDelete = async (id: string, studentName: string) => {
+    try {
+      const { error } = await supabase.from("face_data").delete().eq("id", id);
+
+      if (error) throw error;
+
+      toast({
+        title: "Deleted",
+        description: `Face data removed for ${studentName}`,
+      });
+      fetchFaceData();
+    } catch (error: any) {
+      console.error("Delete error:", error);
+      toast({
+        title: "Error",
+        description: error.message || "Failed to delete face data",
+        variant: "destructive",
+      });
+    }
   };
 
   return (
@@ -37,35 +97,45 @@ export default function FaceManagement() {
         </div>
 
         <div className="grid md:grid-cols-2 gap-6">
-          <FaceRegistration onComplete={() => setRefresh(prev => prev + 1)} />
+          <FaceRegistration onComplete={fetchFaceData} />
 
           <Card className="p-6">
             <div className="flex items-center justify-between mb-4">
               <h3 className="text-lg font-semibold">Registered Students</h3>
-              <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                <Users className="h-4 w-4" />
-                {storedFaces.length}
+              <div className="flex items-center gap-4">
+                <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                  <Users className="h-4 w-4" />
+                  {faceData.length}
+                </div>
+                <Button size="sm" variant="ghost" onClick={fetchFaceData}>
+                  <RefreshCw className="h-4 w-4" />
+                </Button>
               </div>
             </div>
 
             <div className="space-y-2 max-h-96 overflow-y-auto">
-              {storedFaces.length === 0 ? (
+              {loading ? (
+                <p className="text-sm text-muted-foreground text-center py-8">Loading...</p>
+              ) : faceData.length === 0 ? (
                 <p className="text-sm text-muted-foreground text-center py-8">
                   No registered faces yet
                 </p>
               ) : (
-                storedFaces.map((face) => (
-                  <div key={face.studentId} className="flex items-center justify-between p-3 bg-muted rounded-lg">
+                faceData.map((face) => (
+                  <div
+                    key={face.id}
+                    className="flex items-center justify-between p-3 bg-muted rounded-lg"
+                  >
                     <div>
-                      <div className="font-medium">{face.studentName}</div>
+                      <div className="font-medium">{face.students.profiles.name}</div>
                       <div className="text-sm text-muted-foreground">
-                        ID: {face.studentId} • {face.descriptors.length} samples
+                        ID: {face.students.student_id} • {face.descriptors.length} samples
                       </div>
                     </div>
                     <Button
                       size="sm"
                       variant="ghost"
-                      onClick={() => handleDelete(face.studentId)}
+                      onClick={() => handleDelete(face.id, face.students.profiles.name)}
                     >
                       <Trash2 className="h-4 w-4 text-destructive" />
                     </Button>
