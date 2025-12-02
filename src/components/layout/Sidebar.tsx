@@ -48,7 +48,7 @@ const studentLinks = [
   { to: "/student/dashboard", label: "Dashboard", icon: LayoutDashboard },
   { to: "/student/attendance", label: "My Attendance", icon: BookOpenCheck },
   { to: "/student/timetable", label: "Timetable", icon: Calendar },
-  { to: "/student/chatbot", label: "AI Assistant", icon: MessageSquare },
+  { to: "/student/chat", label: "AI Assistant", icon: MessageSquare },
   { to: "/student/analytics", label: "Analytics", icon: BarChart3 },
   { to: "/student/settings", label: "Settings", icon: Settings },
 ];
