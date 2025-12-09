@@ -186,7 +186,7 @@ export const FaceRegistration = ({ onComplete }: FaceRegistrationProps) => {
         if (error) throw error;
       }
 
-      const studentName = students.find((s) => s.id === studentId)?.profiles.name;
+      const studentName = students.find((s) => s.id === studentId)?.profiles?.name || 'Student';
       toast({
         title: "Registration Complete",
         description: `Successfully registered ${studentName}`,
@@ -227,7 +227,7 @@ export const FaceRegistration = ({ onComplete }: FaceRegistrationProps) => {
             <SelectContent>
               {students.map((student) => (
                 <SelectItem key={student.id} value={student.id}>
-                  {student.student_id} - {student.profiles.name}
+                  {student.student_id} - {student.profiles?.name || 'Unknown'}
                 </SelectItem>
               ))}
             </SelectContent>
