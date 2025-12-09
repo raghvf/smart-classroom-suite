@@ -121,26 +121,30 @@ export default function FaceManagement() {
                   No registered faces yet
                 </p>
               ) : (
-                faceData.map((face) => (
-                  <div
-                    key={face.id}
-                    className="flex items-center justify-between p-3 bg-muted rounded-lg"
-                  >
-                    <div>
-                      <div className="font-medium">{face.students.profiles.name}</div>
-                      <div className="text-sm text-muted-foreground">
-                        ID: {face.students.student_id} • {face.descriptors.length} samples
-                      </div>
-                    </div>
-                    <Button
-                      size="sm"
-                      variant="ghost"
-                      onClick={() => handleDelete(face.id, face.students.profiles.name)}
+                faceData.map((face) => {
+                  const studentName = face.students?.profiles?.name || 'Unknown Student';
+                  const studentId = face.students?.student_id || 'N/A';
+                  return (
+                    <div
+                      key={face.id}
+                      className="flex items-center justify-between p-3 bg-muted rounded-lg"
                     >
-                      <Trash2 className="h-4 w-4 text-destructive" />
-                    </Button>
-                  </div>
-                ))
+                      <div>
+                        <div className="font-medium">{studentName}</div>
+                        <div className="text-sm text-muted-foreground">
+                          ID: {studentId} • {face.descriptors.length} samples
+                        </div>
+                      </div>
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        onClick={() => handleDelete(face.id, studentName)}
+                      >
+                        <Trash2 className="h-4 w-4 text-destructive" />
+                      </Button>
+                    </div>
+                  );
+                })
               )}
             </div>
           </Card>
