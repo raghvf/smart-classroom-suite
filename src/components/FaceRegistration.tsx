@@ -133,6 +133,11 @@ export const FaceRegistration = ({ onComplete }: FaceRegistrationProps) => {
 
   const captureFrames = async () => {
     let count = 0;
+    const options = new faceapi.TinyFaceDetectorOptions({ 
+      inputSize: 320, 
+      scoreThreshold: 0.3 // Lower threshold for easier detection
+    });
+    
     const interval = setInterval(async () => {
       if (!videoRef.current || count >= targetCaptures) {
         clearInterval(interval);
@@ -144,15 +149,19 @@ export const FaceRegistration = ({ onComplete }: FaceRegistrationProps) => {
       }
 
       try {
+        console.log("Attempting face detection...");
         const detection = await faceapi
-          .detectSingleFace(videoRef.current, new faceapi.TinyFaceDetectorOptions())
+          .detectSingleFace(videoRef.current, options)
           .withFaceLandmarks()
           .withFaceDescriptor();
 
         if (detection) {
+          console.log("Face detected!", detection.detection.score);
           descriptorsRef.current.push(Array.from(detection.descriptor));
           count++;
           setCapturedCount(count);
+        } else {
+          console.log("No face detected in frame");
         }
       } catch (error) {
         console.error("Detection error:", error);
