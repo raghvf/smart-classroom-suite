@@ -102,25 +102,31 @@ export const FaceRegistration = ({ onComplete }: FaceRegistrationProps) => {
 
     try {
       const mediaStream = await navigator.mediaDevices.getUserMedia({
-        video: { width: 640, height: 480 },
+        video: { width: 640, height: 480, facingMode: "user" },
       });
       setStream(mediaStream);
 
       if (videoRef.current) {
         videoRef.current.srcObject = mediaStream;
-        await videoRef.current.play();
+        
+        // Wait for video to be fully loaded before starting capture
+        videoRef.current.onloadedmetadata = async () => {
+          await videoRef.current?.play();
+          console.log("Video ready, dimensions:", videoRef.current?.videoWidth, videoRef.current?.videoHeight);
+          
+          setIsCapturing(true);
+          setCapturedCount(0);
+          descriptorsRef.current = [];
+
+          toast({
+            title: "Camera Started",
+            description: "Look at the camera. Capturing faces...",
+          });
+
+          // Small delay to ensure video is rendering
+          setTimeout(() => captureFrames(), 500);
+        };
       }
-
-      setIsCapturing(true);
-      setCapturedCount(0);
-      descriptorsRef.current = [];
-
-      toast({
-        title: "Camera Started",
-        description: "Look at the camera. Capturing faces...",
-      });
-
-      captureFrames();
     } catch (error) {
       console.error("Camera error:", error);
       toast({
@@ -134,12 +140,12 @@ export const FaceRegistration = ({ onComplete }: FaceRegistrationProps) => {
   const captureFrames = async () => {
     let count = 0;
     const options = new faceapi.TinyFaceDetectorOptions({ 
-      inputSize: 320, 
-      scoreThreshold: 0.3 // Lower threshold for easier detection
+      inputSize: 416, 
+      scoreThreshold: 0.2
     });
     
     const interval = setInterval(async () => {
-      if (!videoRef.current || count >= targetCaptures) {
+      if (!videoRef.current || count >= targetCaptures || !isCapturing) {
         clearInterval(interval);
         if (count >= targetCaptures) {
           await saveFaceData();
@@ -148,25 +154,37 @@ export const FaceRegistration = ({ onComplete }: FaceRegistrationProps) => {
         return;
       }
 
-      try {
-        console.log("Attempting face detection...");
-        const detection = await faceapi
-          .detectSingleFace(videoRef.current, options)
-          .withFaceLandmarks()
-          .withFaceDescriptor();
+      // Ensure video has valid dimensions
+      if (videoRef.current.videoWidth === 0 || videoRef.current.videoHeight === 0) {
+        console.log("Video not ready yet...");
+        return;
+      }
 
-        if (detection) {
-          console.log("Face detected!", detection.detection.score);
-          descriptorsRef.current.push(Array.from(detection.descriptor));
-          count++;
-          setCapturedCount(count);
-        } else {
-          console.log("No face detected in frame");
+      try {
+        console.log("Detecting face...");
+        
+        // First just try to detect a face
+        const detections = await faceapi.detectAllFaces(videoRef.current, options);
+        console.log("Detections found:", detections.length);
+        
+        if (detections.length > 0) {
+          // Now get full detection with landmarks and descriptor
+          const detection = await faceapi
+            .detectSingleFace(videoRef.current, options)
+            .withFaceLandmarks()
+            .withFaceDescriptor();
+
+          if (detection) {
+            console.log("Face captured! Score:", detection.detection.score);
+            descriptorsRef.current.push(Array.from(detection.descriptor));
+            count++;
+            setCapturedCount(count);
+          }
         }
       } catch (error) {
         console.error("Detection error:", error);
       }
-    }, 500);
+    }, 800);
   };
 
   const saveFaceData = async () => {
