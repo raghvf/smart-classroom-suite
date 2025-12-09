@@ -27,8 +27,12 @@ export const FaceRegistration = ({ onComplete }: FaceRegistrationProps) => {
   const [capturedCount, setCapturedCount] = useState(0);
   const [modelsLoaded, setModelsLoaded] = useState(false);
   const [stream, setStream] = useState<MediaStream | null>(null);
+  const [detectionStatus, setDetectionStatus] = useState<string>("Waiting...");
+  const [lastDetection, setLastDetection] = useState<faceapi.FaceDetection | null>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
+  const canvasRef = useRef<HTMLCanvasElement>(null);
   const descriptorsRef = useRef<number[][]>([]);
+  const intervalRef = useRef<NodeJS.Timeout | null>(null);
   const { toast } = useToast();
   const targetCaptures = 10;
 
@@ -137,6 +141,29 @@ export const FaceRegistration = ({ onComplete }: FaceRegistrationProps) => {
     }
   };
 
+  const drawFaceOverlay = (detection: faceapi.FaceDetection) => {
+    if (!canvasRef.current || !videoRef.current) return;
+    
+    const canvas = canvasRef.current;
+    const video = videoRef.current;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+
+    canvas.width = video.videoWidth;
+    canvas.height = video.videoHeight;
+    
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    
+    const box = detection.box;
+    ctx.strokeStyle = '#22c55e';
+    ctx.lineWidth = 3;
+    ctx.strokeRect(box.x, box.y, box.width, box.height);
+    
+    ctx.fillStyle = '#22c55e';
+    ctx.font = '16px sans-serif';
+    ctx.fillText(`Score: ${(detection.score * 100).toFixed(0)}%`, box.x, box.y - 10);
+  };
+
   const captureFrames = async () => {
     let count = 0;
     const options = new faceapi.TinyFaceDetectorOptions({ 
@@ -144,47 +171,52 @@ export const FaceRegistration = ({ onComplete }: FaceRegistrationProps) => {
       scoreThreshold: 0.2
     });
     
-    const interval = setInterval(async () => {
-      if (!videoRef.current || count >= targetCaptures || !isCapturing) {
-        clearInterval(interval);
+    intervalRef.current = setInterval(async () => {
+      if (!videoRef.current || count >= targetCaptures) {
+        if (intervalRef.current) clearInterval(intervalRef.current);
         if (count >= targetCaptures) {
+          setDetectionStatus("Complete!");
           await saveFaceData();
         }
         stopCapture();
         return;
       }
 
-      // Ensure video has valid dimensions
       if (videoRef.current.videoWidth === 0 || videoRef.current.videoHeight === 0) {
-        console.log("Video not ready yet...");
+        setDetectionStatus("Video loading...");
         return;
       }
 
       try {
-        console.log("Detecting face...");
+        setDetectionStatus("Scanning...");
         
-        // First just try to detect a face
-        const detections = await faceapi.detectAllFaces(videoRef.current, options);
-        console.log("Detections found:", detections.length);
-        
-        if (detections.length > 0) {
-          // Now get full detection with landmarks and descriptor
-          const detection = await faceapi
-            .detectSingleFace(videoRef.current, options)
-            .withFaceLandmarks()
-            .withFaceDescriptor();
+        const detection = await faceapi
+          .detectSingleFace(videoRef.current, options)
+          .withFaceLandmarks()
+          .withFaceDescriptor();
 
-          if (detection) {
-            console.log("Face captured! Score:", detection.detection.score);
-            descriptorsRef.current.push(Array.from(detection.descriptor));
-            count++;
-            setCapturedCount(count);
+        if (detection) {
+          setDetectionStatus(`Face detected! (${(detection.detection.score * 100).toFixed(0)}%)`);
+          setLastDetection(detection.detection);
+          drawFaceOverlay(detection.detection);
+          
+          descriptorsRef.current.push(Array.from(detection.descriptor));
+          count++;
+          setCapturedCount(count);
+          console.log(`Captured ${count}/${targetCaptures}`);
+        } else {
+          setDetectionStatus("No face - look at camera");
+          setLastDetection(null);
+          if (canvasRef.current) {
+            const ctx = canvasRef.current.getContext('2d');
+            ctx?.clearRect(0, 0, canvasRef.current.width, canvasRef.current.height);
           }
         }
       } catch (error) {
         console.error("Detection error:", error);
+        setDetectionStatus("Detection error");
       }
-    }, 800);
+    }, 600);
   };
 
   const saveFaceData = async () => {
@@ -230,13 +262,23 @@ export const FaceRegistration = ({ onComplete }: FaceRegistrationProps) => {
   };
 
   const stopCapture = () => {
+    if (intervalRef.current) {
+      clearInterval(intervalRef.current);
+      intervalRef.current = null;
+    }
     if (stream) {
       stream.getTracks().forEach((track) => track.stop());
       setStream(null);
     }
     setIsCapturing(false);
+    setDetectionStatus("Waiting...");
+    setLastDetection(null);
     if (videoRef.current) {
       videoRef.current.srcObject = null;
+    }
+    if (canvasRef.current) {
+      const ctx = canvasRef.current.getContext('2d');
+      ctx?.clearRect(0, 0, canvasRef.current.width, canvasRef.current.height);
     }
   };
 
@@ -262,16 +304,34 @@ export const FaceRegistration = ({ onComplete }: FaceRegistrationProps) => {
         </div>
 
         {isCapturing && (
-          <div className="space-y-2">
-            <video
-              ref={videoRef}
-              className="w-full rounded-lg border"
-              autoPlay
-              muted
-              playsInline
-            />
-            <div className="text-sm text-center">
-              Captured: {capturedCount} / {targetCaptures}
+          <div className="space-y-3">
+            <div className="relative">
+              <video
+                ref={videoRef}
+                className="w-full rounded-lg border"
+                autoPlay
+                muted
+                playsInline
+              />
+              <canvas
+                ref={canvasRef}
+                className="absolute top-0 left-0 w-full h-full pointer-events-none"
+              />
+              <div className={`absolute top-2 left-2 px-3 py-1 rounded-full text-sm font-medium ${
+                lastDetection ? 'bg-green-500 text-white' : 'bg-yellow-500 text-black'
+              }`}>
+                {detectionStatus}
+              </div>
+            </div>
+            <div className="flex items-center justify-between text-sm">
+              <span className="text-muted-foreground">Progress:</span>
+              <span className="font-medium">{capturedCount} / {targetCaptures} captures</span>
+            </div>
+            <div className="w-full bg-muted rounded-full h-2">
+              <div 
+                className="bg-primary h-2 rounded-full transition-all duration-300" 
+                style={{ width: `${(capturedCount / targetCaptures) * 100}%` }}
+              />
             </div>
           </div>
         )}
