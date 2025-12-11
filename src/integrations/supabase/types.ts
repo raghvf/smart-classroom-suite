@@ -67,29 +67,42 @@ export type Database = {
           created_at: string
           descriptors: Json
           id: string
-          student_id: string
+          student_id: string | null
           updated_at: string
+          user_id: string | null
+          user_type: string
         }
         Insert: {
           created_at?: string
           descriptors: Json
           id?: string
-          student_id: string
+          student_id?: string | null
           updated_at?: string
+          user_id?: string | null
+          user_type?: string
         }
         Update: {
           created_at?: string
           descriptors?: Json
           id?: string
-          student_id?: string
+          student_id?: string | null
           updated_at?: string
+          user_id?: string | null
+          user_type?: string
         }
         Relationships: [
           {
             foreignKeyName: "face_data_student_id_fkey"
             columns: ["student_id"]
-            isOneToOne: true
+            isOneToOne: false
             referencedRelation: "students"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "face_data_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
         ]

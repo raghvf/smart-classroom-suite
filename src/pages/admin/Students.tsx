@@ -11,8 +11,9 @@ import { useToast } from '@/hooks/use-toast';
 import { getStoredUser } from '@/lib/auth';
 import { supabase } from '@/integrations/supabase/client';
 import { Navigate } from 'react-router-dom';
-import { Plus, Pencil, Trash2, Search, UserPlus } from 'lucide-react';
+import { Plus, Pencil, Trash2, Search, UserPlus, Camera } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
+import { FaceRegistration } from '@/components/FaceRegistration';
 
 interface Student {
   id: string;
@@ -51,6 +52,7 @@ export default function Students() {
   const [searchQuery, setSearchQuery] = useState('');
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+  const [isFaceDialogOpen, setIsFaceDialogOpen] = useState(false);
   const [selectedStudent, setSelectedStudent] = useState<Student | null>(null);
   const [formData, setFormData] = useState<StudentFormData>({
     name: '',
@@ -283,10 +285,16 @@ export default function Students() {
             <h1 className="text-3xl font-bold">Students</h1>
             <p className="text-muted-foreground">Manage student records and information</p>
           </div>
-          <Button onClick={() => setIsAddDialogOpen(true)}>
-            <Plus className="h-4 w-4 mr-2" />
-            Add Student
-          </Button>
+          <div className="flex gap-2">
+            <Button variant="outline" onClick={() => setIsFaceDialogOpen(true)}>
+              <Camera className="h-4 w-4 mr-2" />
+              Add Photos
+            </Button>
+            <Button onClick={() => setIsAddDialogOpen(true)}>
+              <Plus className="h-4 w-4 mr-2" />
+              Add Student
+            </Button>
+          </div>
         </div>
 
         <Card>
@@ -581,6 +589,19 @@ export default function Students() {
                 </Button>
               </DialogFooter>
             </form>
+          </DialogContent>
+        </Dialog>
+
+        {/* Face Registration Dialog */}
+        <Dialog open={isFaceDialogOpen} onOpenChange={setIsFaceDialogOpen}>
+          <DialogContent className="max-w-2xl">
+            <DialogHeader>
+              <DialogTitle>Add Face Photos</DialogTitle>
+              <DialogDescription>
+                Register student faces for automatic attendance marking
+              </DialogDescription>
+            </DialogHeader>
+            <FaceRegistration onComplete={() => setIsFaceDialogOpen(false)} />
           </DialogContent>
         </Dialog>
       </div>
