@@ -28,7 +28,7 @@ interface Student {
   profiles: {
     name: string;
     email: string;
-  };
+  } | null;
 }
 
 interface StudentFormData {
@@ -209,7 +209,7 @@ export default function Students() {
   };
 
   const handleDeleteStudent = async (student: Student) => {
-    if (!confirm(`Are you sure you want to delete ${student.profiles.name}?`)) return;
+    if (!confirm(`Are you sure you want to delete ${student.profiles?.name || 'this student'}?`)) return;
 
     try {
       const { error } = await supabase
@@ -237,8 +237,8 @@ export default function Students() {
   const openEditDialog = (student: Student) => {
     setSelectedStudent(student);
     setFormData({
-      name: student.profiles.name,
-      email: student.profiles.email,
+      name: student.profiles?.name || '',
+      email: student.profiles?.email || '',
       password: '',
       student_id: student.student_id,
       department: student.department,
@@ -265,9 +265,9 @@ export default function Students() {
   };
 
   const filteredStudents = students.filter(student =>
-    student.profiles.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    (student.profiles?.name || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
     student.student_id.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    student.profiles.email.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    (student.profiles?.email || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
     student.department.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
@@ -330,8 +330,8 @@ export default function Students() {
                   {filteredStudents.map((student) => (
                     <TableRow key={student.id}>
                       <TableCell className="font-medium">{student.student_id}</TableCell>
-                      <TableCell>{student.profiles.name}</TableCell>
-                      <TableCell>{student.profiles.email}</TableCell>
+                      <TableCell>{student.profiles?.name || 'Unknown'}</TableCell>
+                      <TableCell>{student.profiles?.email || '-'}</TableCell>
                       <TableCell>{student.department}</TableCell>
                       <TableCell>{student.semester}</TableCell>
                       <TableCell>{student.batch}</TableCell>
