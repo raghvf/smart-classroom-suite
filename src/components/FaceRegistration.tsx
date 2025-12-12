@@ -294,6 +294,12 @@ export const FaceRegistration = ({ onComplete }: FaceRegistrationProps) => {
     <Card className="p-6">
       <h3 className="text-lg font-semibold mb-4">Register Student Face</h3>
 
+      {!modelsLoaded ? (
+        <div className="flex flex-col items-center justify-center py-8 space-y-4">
+          <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-primary"></div>
+          <p className="text-sm text-muted-foreground">Loading face recognition models...</p>
+        </div>
+      ) : (
       <div className="space-y-4">
         <div>
           <Label htmlFor="student">Select Student</Label>
@@ -358,6 +364,7 @@ export const FaceRegistration = ({ onComplete }: FaceRegistrationProps) => {
           )}
         </div>
       </div>
+      )}
     </Card>
   );
 };
