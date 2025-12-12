@@ -36,6 +36,7 @@ export default function Faculty() {
   const [isCapturing, setIsCapturing] = useState(false);
   const [capturedCount, setCapturedCount] = useState(0);
   const [modelsLoaded, setModelsLoaded] = useState(false);
+  const [loadingProgress, setLoadingProgress] = useState({ step: 0, total: 3, currentModel: "" });
   const [stream, setStream] = useState<MediaStream | null>(null);
   const [detectionStatus, setDetectionStatus] = useState<string>("Waiting...");
   const [lastDetection, setLastDetection] = useState<faceapi.FaceDetection | null>(null);
@@ -62,12 +63,19 @@ export default function Faculty() {
   const loadModels = async () => {
     try {
       console.log("Loading face-api models...");
+      
+      setLoadingProgress({ step: 1, total: 3, currentModel: "Face Detector" });
       await faceapi.nets.tinyFaceDetector.loadFromUri(MODEL_URL);
       console.log("TinyFaceDetector loaded");
+      
+      setLoadingProgress({ step: 2, total: 3, currentModel: "Face Landmarks" });
       await faceapi.nets.faceLandmark68Net.loadFromUri(MODEL_URL);
       console.log("FaceLandmark68Net loaded");
+      
+      setLoadingProgress({ step: 3, total: 3, currentModel: "Face Recognition" });
       await faceapi.nets.faceRecognitionNet.loadFromUri(MODEL_URL);
       console.log("FaceRecognitionNet loaded");
+      
       setModelsLoaded(true);
       console.log("All face recognition models loaded successfully");
     } catch (error) {
@@ -375,7 +383,21 @@ export default function Faculty() {
             {!modelsLoaded ? (
               <div className="flex flex-col items-center justify-center py-8 space-y-4">
                 <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-primary"></div>
-                <p className="text-sm text-muted-foreground">Loading face recognition models...</p>
+                <div className="w-full max-w-xs space-y-2">
+                  <div className="flex justify-between text-sm">
+                    <span className="text-muted-foreground">
+                      {loadingProgress.currentModel ? `Loading: ${loadingProgress.currentModel}` : "Initializing..."}
+                    </span>
+                    <span className="font-medium">{loadingProgress.step}/{loadingProgress.total}</span>
+                  </div>
+                  <div className="w-full bg-muted rounded-full h-2">
+                    <div 
+                      className="bg-primary h-2 rounded-full transition-all duration-500" 
+                      style={{ width: `${(loadingProgress.step / loadingProgress.total) * 100}%` }}
+                    />
+                  </div>
+                </div>
+                <p className="text-xs text-muted-foreground">Loading face recognition models...</p>
               </div>
             ) : (
             <div className="space-y-4">
