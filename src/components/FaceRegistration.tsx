@@ -39,22 +39,30 @@ export const FaceRegistration = ({ onComplete }: FaceRegistrationProps) => {
   useEffect(() => {
     loadModels();
     fetchStudents();
+    
+    return () => {
+      if (intervalRef.current) {
+        clearInterval(intervalRef.current);
+      }
+    };
   }, []);
 
   const loadModels = async () => {
     try {
-      await Promise.all([
-        faceapi.nets.tinyFaceDetector.loadFromUri(MODEL_URL),
-        faceapi.nets.faceLandmark68Net.loadFromUri(MODEL_URL),
-        faceapi.nets.faceRecognitionNet.loadFromUri(MODEL_URL),
-      ]);
+      console.log("Loading face-api models...");
+      await faceapi.nets.tinyFaceDetector.loadFromUri(MODEL_URL);
+      console.log("TinyFaceDetector loaded");
+      await faceapi.nets.faceLandmark68Net.loadFromUri(MODEL_URL);
+      console.log("FaceLandmark68Net loaded");
+      await faceapi.nets.faceRecognitionNet.loadFromUri(MODEL_URL);
+      console.log("FaceRecognitionNet loaded");
       setModelsLoaded(true);
-      console.log("Face recognition models loaded");
+      console.log("All face recognition models loaded successfully");
     } catch (error) {
       console.error("Error loading models:", error);
       toast({
         title: "Error",
-        description: "Failed to load face recognition models",
+        description: "Failed to load face recognition models. Please refresh the page.",
         variant: "destructive",
       });
     }
