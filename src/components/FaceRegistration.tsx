@@ -1,5 +1,5 @@
-import { useState, useRef, useEffect } from "react";
-import { Camera, Check, X } from "lucide-react";
+import { useState, useRef, useEffect, useCallback } from "react";
+import { Camera, Check, X, Hand } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Card } from "@/components/ui/card";
@@ -30,10 +30,13 @@ export const FaceRegistration = ({ onComplete }: FaceRegistrationProps) => {
   const [stream, setStream] = useState<MediaStream | null>(null);
   const [detectionStatus, setDetectionStatus] = useState<string>("Waiting...");
   const [lastDetection, setLastDetection] = useState<faceapi.FaceDetection | null>(null);
+  const [captureMode, setCaptureMode] = useState<"auto" | "manual">("manual");
+  const [isManualCapturing, setIsManualCapturing] = useState(false);
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const descriptorsRef = useRef<number[][]>([]);
   const intervalRef = useRef<NodeJS.Timeout | null>(null);
+  const detectionIntervalRef = useRef<NodeJS.Timeout | null>(null);
   const { toast } = useToast();
   const targetCaptures = 10;
 
@@ -140,11 +143,18 @@ export const FaceRegistration = ({ onComplete }: FaceRegistrationProps) => {
 
           toast({
             title: "Camera Started",
-            description: "Look at the camera. Capturing faces...",
+            description: captureMode === "manual" 
+              ? "Click 'Capture Photo' button to take photos" 
+              : "Look at the camera. Auto-capturing faces...",
           });
 
-          // Small delay to ensure video is rendering
-          setTimeout(() => captureFrames(), 500);
+          // Start continuous face detection for overlay (both modes)
+          setTimeout(() => startFaceDetectionOverlay(), 500);
+          
+          // Only start auto-capture in auto mode
+          if (captureMode === "auto") {
+            setTimeout(() => captureFrames(), 500);
+          }
         };
       }
     } catch (error) {
@@ -156,6 +166,87 @@ export const FaceRegistration = ({ onComplete }: FaceRegistrationProps) => {
       });
     }
   };
+
+  // Continuous face detection for visual overlay (doesn't capture)
+  const startFaceDetectionOverlay = () => {
+    const options = new faceapi.TinyFaceDetectorOptions({ 
+      inputSize: 512,
+      scoreThreshold: 0.15
+    });
+
+    detectionIntervalRef.current = setInterval(async () => {
+      if (!videoRef.current || videoRef.current.videoWidth === 0) return;
+
+      try {
+        const detection = await faceapi.detectSingleFace(videoRef.current, options);
+        
+        if (detection) {
+          setDetectionStatus(`Face detected! (${(detection.score * 100).toFixed(0)}%)`);
+          setLastDetection(detection);
+          drawFaceOverlay(detection);
+        } else {
+          setDetectionStatus("No face - look at camera");
+          setLastDetection(null);
+          if (canvasRef.current) {
+            const ctx = canvasRef.current.getContext('2d');
+            ctx?.clearRect(0, 0, canvasRef.current.width, canvasRef.current.height);
+          }
+        }
+      } catch (error) {
+        console.error("Detection overlay error:", error);
+      }
+    }, 200);
+  };
+
+  // Manual capture - single photo capture
+  const captureManualPhoto = useCallback(async () => {
+    if (!videoRef.current || capturedCount >= targetCaptures || isManualCapturing) return;
+    
+    setIsManualCapturing(true);
+    const options = new faceapi.TinyFaceDetectorOptions({ 
+      inputSize: 512,
+      scoreThreshold: 0.15
+    });
+
+    try {
+      const detection = await faceapi
+        .detectSingleFace(videoRef.current, options)
+        .withFaceLandmarks()
+        .withFaceDescriptor();
+
+      if (detection) {
+        descriptorsRef.current.push(Array.from(detection.descriptor));
+        const newCount = capturedCount + 1;
+        setCapturedCount(newCount);
+        
+        toast({
+          title: "Photo Captured!",
+          description: `${newCount}/${targetCaptures} photos taken`,
+        });
+
+        if (newCount >= targetCaptures) {
+          setDetectionStatus("Complete!");
+          await saveFaceData();
+          stopCapture();
+        }
+      } else {
+        toast({
+          title: "No Face Detected",
+          description: "Please position your face in the camera",
+          variant: "destructive",
+        });
+      }
+    } catch (error) {
+      console.error("Manual capture error:", error);
+      toast({
+        title: "Capture Error",
+        description: "Failed to capture photo",
+        variant: "destructive",
+      });
+    } finally {
+      setIsManualCapturing(false);
+    }
+  }, [capturedCount, targetCaptures, toast]);
 
   const drawFaceOverlay = (detection: faceapi.FaceDetection) => {
     if (!canvasRef.current || !videoRef.current) return;
@@ -283,6 +374,10 @@ export const FaceRegistration = ({ onComplete }: FaceRegistrationProps) => {
       clearInterval(intervalRef.current);
       intervalRef.current = null;
     }
+    if (detectionIntervalRef.current) {
+      clearInterval(detectionIntervalRef.current);
+      detectionIntervalRef.current = null;
+    }
     if (stream) {
       stream.getTracks().forEach((track) => track.stop());
       setStream(null);
@@ -340,6 +435,37 @@ export const FaceRegistration = ({ onComplete }: FaceRegistrationProps) => {
           </Select>
         </div>
 
+        {!isCapturing && (
+          <div>
+            <Label>Capture Mode</Label>
+            <div className="flex gap-2 mt-2">
+              <Button
+                variant={captureMode === "manual" ? "default" : "outline"}
+                size="sm"
+                onClick={() => setCaptureMode("manual")}
+                className="flex-1"
+              >
+                <Hand className="mr-2 h-4 w-4" />
+                Manual
+              </Button>
+              <Button
+                variant={captureMode === "auto" ? "default" : "outline"}
+                size="sm"
+                onClick={() => setCaptureMode("auto")}
+                className="flex-1"
+              >
+                <Camera className="mr-2 h-4 w-4" />
+                Auto
+              </Button>
+            </div>
+            <p className="text-xs text-muted-foreground mt-1">
+              {captureMode === "manual" 
+                ? "Click button to capture each photo manually" 
+                : "Automatically captures photos when face is detected"}
+            </p>
+          </div>
+        )}
+
         {isCapturing && (
           <div className="space-y-3">
             <div className="relative">
@@ -359,7 +485,24 @@ export const FaceRegistration = ({ onComplete }: FaceRegistrationProps) => {
               }`}>
                 {detectionStatus}
               </div>
+              <div className="absolute top-2 right-2 px-2 py-1 bg-background/80 rounded text-xs">
+                {captureMode === "manual" ? "Manual Mode" : "Auto Mode"}
+              </div>
             </div>
+            
+            {/* Manual capture button */}
+            {captureMode === "manual" && (
+              <Button 
+                onClick={captureManualPhoto} 
+                className="w-full" 
+                size="lg"
+                disabled={!lastDetection || isManualCapturing || capturedCount >= targetCaptures}
+              >
+                <Camera className="mr-2 h-5 w-5" />
+                {isManualCapturing ? "Capturing..." : `Capture Photo (${capturedCount}/${targetCaptures})`}
+              </Button>
+            )}
+            
             <div className="flex items-center justify-between text-sm">
               <span className="text-muted-foreground">Progress:</span>
               <span className="font-medium">{capturedCount} / {targetCaptures} captures</span>
@@ -377,12 +520,12 @@ export const FaceRegistration = ({ onComplete }: FaceRegistrationProps) => {
           {!isCapturing ? (
             <Button onClick={startCapture} className="w-full" disabled={!modelsLoaded}>
               <Camera className="mr-2 h-4 w-4" />
-              {modelsLoaded ? "Start Face Capture" : "Loading Models..."}
+              {modelsLoaded ? "Start Camera" : "Loading Models..."}
             </Button>
           ) : (
             <Button onClick={stopCapture} variant="destructive" className="w-full">
               <X className="mr-2 h-4 w-4" />
-              Stop Capture
+              Stop & Cancel
             </Button>
           )}
         </div>
