@@ -182,9 +182,10 @@ export const FaceRegistration = ({ onComplete }: FaceRegistrationProps) => {
 
   const captureFrames = async () => {
     let count = 0;
+    // Optimized settings for better detection success
     const options = new faceapi.TinyFaceDetectorOptions({ 
-      inputSize: 416, 
-      scoreThreshold: 0.2
+      inputSize: 512,        // Larger input = more accurate detection
+      scoreThreshold: 0.15   // Lower threshold = more lenient detection
     });
     
     intervalRef.current = setInterval(async () => {

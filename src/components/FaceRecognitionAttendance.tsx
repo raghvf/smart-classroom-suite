@@ -204,9 +204,10 @@ export const FaceRecognitionAttendance = () => {
   }, []);
 
   const startContinuousDetection = useCallback(() => {
+    // Optimized settings for better detection success
     const options = new faceapi.TinyFaceDetectorOptions({ 
-      inputSize: 416, 
-      scoreThreshold: 0.3 
+      inputSize: 512,        // Larger input = more accurate detection
+      scoreThreshold: 0.15   // Lower threshold = more lenient detection
     });
 
     intervalRef.current = setInterval(async () => {
@@ -260,7 +261,7 @@ export const FaceRecognitionAttendance = () => {
 
   const findBestMatch = (descriptor: Float32Array): RecognizedStudent | null => {
     let bestMatch: RecognizedStudent | null = null;
-    const threshold = 0.6;
+    const threshold = 0.65; // Slightly higher = more lenient matching
 
     for (const record of faceDataCache) {
       if (!record.students?.profiles?.name) continue;
