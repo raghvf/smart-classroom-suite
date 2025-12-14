@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect, useCallback } from "react";
-import { Camera, Check, X, Hand } from "lucide-react";
+import { Camera, Check, X, Hand, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Card } from "@/components/ui/card";
@@ -32,6 +32,7 @@ export const FaceRegistration = ({ onComplete }: FaceRegistrationProps) => {
   const [lastDetection, setLastDetection] = useState<faceapi.FaceDetection | null>(null);
   const [captureMode, setCaptureMode] = useState<"auto" | "manual">("manual");
   const [isManualCapturing, setIsManualCapturing] = useState(false);
+  const [capturedPhotos, setCapturedPhotos] = useState<string[]>([]);
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const descriptorsRef = useRef<number[][]>([]);
@@ -140,6 +141,7 @@ export const FaceRegistration = ({ onComplete }: FaceRegistrationProps) => {
           setIsCapturing(true);
           setCapturedCount(0);
           descriptorsRef.current = [];
+          setCapturedPhotos([]);
 
           toast({
             title: "Camera Started",
@@ -218,6 +220,23 @@ export const FaceRegistration = ({ onComplete }: FaceRegistrationProps) => {
         descriptorsRef.current.push(Array.from(detection.descriptor));
         const newCount = capturedCount + 1;
         setCapturedCount(newCount);
+        
+        // Capture photo thumbnail
+        if (videoRef.current) {
+          const tempCanvas = document.createElement('canvas');
+          tempCanvas.width = 80;
+          tempCanvas.height = 80;
+          const ctx = tempCanvas.getContext('2d');
+          if (ctx) {
+            const box = detection.detection.box;
+            ctx.drawImage(
+              videoRef.current,
+              box.x - 20, box.y - 20, box.width + 40, box.height + 40,
+              0, 0, 80, 80
+            );
+            setCapturedPhotos(prev => [...prev, tempCanvas.toDataURL('image/jpeg', 0.8)]);
+          }
+        }
         
         toast({
           title: "Photo Captured!",
@@ -312,6 +331,23 @@ export const FaceRegistration = ({ onComplete }: FaceRegistrationProps) => {
           count++;
           setCapturedCount(count);
           console.log(`Captured ${count}/${targetCaptures}`);
+          
+          // Capture photo thumbnail for auto mode
+          if (videoRef.current) {
+            const tempCanvas = document.createElement('canvas');
+            tempCanvas.width = 80;
+            tempCanvas.height = 80;
+            const ctx = tempCanvas.getContext('2d');
+            if (ctx) {
+              const box = detection.detection.box;
+              ctx.drawImage(
+                videoRef.current,
+                box.x - 20, box.y - 20, box.width + 40, box.height + 40,
+                0, 0, 80, 80
+              );
+              setCapturedPhotos(prev => [...prev, tempCanvas.toDataURL('image/jpeg', 0.8)]);
+            }
+          }
         } else {
           setDetectionStatus("No face - look at camera");
           setLastDetection(null);
@@ -513,6 +549,42 @@ export const FaceRegistration = ({ onComplete }: FaceRegistrationProps) => {
                 style={{ width: `${(capturedCount / targetCaptures) * 100}%` }}
               />
             </div>
+            
+            {/* Captured photos preview */}
+            {capturedPhotos.length > 0 && (
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <span className="text-sm font-medium">Captured Photos</span>
+                  <Button 
+                    variant="ghost" 
+                    size="sm" 
+                    onClick={() => {
+                      setCapturedPhotos([]);
+                      setCapturedCount(0);
+                      descriptorsRef.current = [];
+                    }}
+                    className="h-7 text-xs text-destructive hover:text-destructive"
+                  >
+                    <Trash2 className="h-3 w-3 mr-1" />
+                    Clear All
+                  </Button>
+                </div>
+                <div className="grid grid-cols-5 gap-2 p-2 bg-muted/50 rounded-lg max-h-40 overflow-y-auto">
+                  {capturedPhotos.map((photo, index) => (
+                    <div key={index} className="relative group">
+                      <img 
+                        src={photo} 
+                        alt={`Capture ${index + 1}`}
+                        className="w-full aspect-square object-cover rounded border border-border"
+                      />
+                      <span className="absolute bottom-0 right-0 bg-primary text-primary-foreground text-[10px] px-1 rounded-tl">
+                        {index + 1}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
         )}
 
