@@ -25,6 +25,7 @@ export const FaceRegistration = ({ onComplete }: FaceRegistrationProps) => {
   const [stream, setStream] = useState<MediaStream | null>(null);
   const [cameraReady, setCameraReady] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+  const [showFlash, setShowFlash] = useState(false);
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const { toast } = useToast();
@@ -149,6 +150,10 @@ export const FaceRegistration = ({ onComplete }: FaceRegistrationProps) => {
 
     // Draw current video frame to canvas
     ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+    
+    // Trigger flash effect
+    setShowFlash(true);
+    setTimeout(() => setShowFlash(false), 150);
     
     // Convert to base64
     const photoData = canvas.toDataURL('image/jpeg', 0.8);
@@ -286,6 +291,11 @@ export const FaceRegistration = ({ onComplete }: FaceRegistrationProps) => {
               />
               {/* Hidden canvas for capture */}
               <canvas ref={canvasRef} className="hidden" />
+              
+              {/* Flash effect overlay */}
+              {showFlash && (
+                <div className="absolute inset-0 bg-white animate-[flash_0.15s_ease-out] pointer-events-none" />
+              )}
               
               {/* Camera ready indicator */}
               {cameraReady && (
