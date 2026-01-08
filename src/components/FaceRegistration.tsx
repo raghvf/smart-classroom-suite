@@ -294,9 +294,27 @@ export const FaceRegistration = ({ onComplete }: FaceRegistrationProps) => {
                   Camera Ready
                 </div>
               )}
+
+              {/* Photo count indicator */}
+              <div className="absolute top-2 right-2 bg-primary text-primary-foreground text-sm px-3 py-1 rounded-full font-medium">
+                {capturedPhotos.length}/{targetCaptures}
+              </div>
+
+              {/* Large floating capture button overlay */}
+              <div className="absolute bottom-4 left-1/2 -translate-x-1/2">
+                <button
+                  onClick={capturePhoto}
+                  disabled={!cameraReady || capturedPhotos.length >= targetCaptures}
+                  className="w-16 h-16 rounded-full bg-white border-4 border-primary flex items-center justify-center shadow-lg hover:scale-105 active:scale-95 transition-transform disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  <div className="w-12 h-12 rounded-full bg-primary flex items-center justify-center">
+                    <Camera className="h-6 w-6 text-primary-foreground" />
+                  </div>
+                </button>
+              </div>
             </div>
 
-            {/* Capture Button */}
+            {/* Additional capture button below */}
             <Button 
               onClick={capturePhoto} 
               className="w-full" 
@@ -304,7 +322,7 @@ export const FaceRegistration = ({ onComplete }: FaceRegistrationProps) => {
               disabled={!cameraReady || capturedPhotos.length >= targetCaptures}
             >
               <Camera className="mr-2 h-5 w-5" />
-              Capture Photo ({capturedPhotos.length}/{targetCaptures})
+              📸 Manual Capture ({capturedPhotos.length}/{targetCaptures})
             </Button>
           </div>
         )}
