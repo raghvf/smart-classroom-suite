@@ -4,7 +4,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
-import { Camera, CheckCircle, XCircle, Loader2, Users, ScanFace } from "lucide-react";
+import { Camera, CheckCircle, XCircle, Loader2, Users, ScanFace, Hand, Play, Square } from "lucide-react";
+import { Switch } from "@/components/ui/switch";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import * as faceapi from "face-api.js";
@@ -39,6 +40,8 @@ export const FaceRecognitionAttendance = () => {
   const [currentDetection, setCurrentDetection] = useState<faceapi.FaceDetection | null>(null);
   const [markedStudents, setMarkedStudents] = useState<RecognizedStudent[]>([]);
   const [isAutoMode, setIsAutoMode] = useState(true);
+  const [isProcessing, setIsProcessing] = useState(false);
+  const [showFlash, setShowFlash] = useState(false);
   const [faceDataCache, setFaceDataCache] = useState<FaceDataRecord[]>([]);
   
   const videoRef = useRef<HTMLVideoElement>(null);
@@ -337,6 +340,115 @@ export const FaceRecognitionAttendance = () => {
     }
   };
 
+  const stopAutoDetection = () => {
+    if (intervalRef.current) {
+      clearInterval(intervalRef.current);
+      intervalRef.current = null;
+    }
+    setDetectionStatus("Auto-detection paused");
+  };
+
+  const resumeAutoDetection = () => {
+    if (isCapturing && isAutoMode && !intervalRef.current) {
+      startContinuousDetection();
+    }
+  };
+
+  const manualCapture = async () => {
+    if (!videoRef.current || videoRef.current.videoWidth === 0 || isProcessing) {
+      return;
+    }
+
+    setIsProcessing(true);
+    setShowFlash(true);
+    setTimeout(() => setShowFlash(false), 150);
+
+    try {
+      const options = new faceapi.TinyFaceDetectorOptions({ 
+        inputSize: 512,
+        scoreThreshold: 0.15
+      });
+
+      setDetectionStatus("Capturing...");
+
+      const detection = await faceapi
+        .detectSingleFace(videoRef.current, options)
+        .withFaceLandmarks()
+        .withFaceDescriptor();
+
+      if (detection) {
+        setCurrentDetection(detection.detection);
+        
+        if (faceDataCache.length > 0) {
+          const match = findBestMatch(detection.descriptor);
+          
+          if (match) {
+            const alreadyMarked = markedStudents.some(s => s.studentId === match.studentId);
+            
+            if (!alreadyMarked) {
+              drawFaceOverlay(detection.detection, true, match.studentName);
+              await markAttendance(match);
+            } else {
+              drawFaceOverlay(detection.detection, true, `${match.studentName} ✓`);
+              setDetectionStatus(`${match.studentName} - Already marked`);
+              toast({
+                title: "Already Marked",
+                description: `${match.studentName} was already marked present`,
+              });
+            }
+          } else {
+            drawFaceOverlay(detection.detection, false, "Unknown");
+            setDetectionStatus("Face not recognized");
+            toast({
+              title: "Not Recognized",
+              description: "Face was detected but not recognized in the system",
+              variant: "destructive",
+            });
+          }
+        } else {
+          drawFaceOverlay(detection.detection, false, "No face data");
+          setDetectionStatus("No face data loaded");
+          toast({
+            title: "No Face Data",
+            description: "Please register student faces first",
+            variant: "destructive",
+          });
+        }
+      } else {
+        setCurrentDetection(null);
+        setDetectionStatus("No face detected");
+        drawFaceOverlay(null, false);
+        toast({
+          title: "No Face Detected",
+          description: "Please position your face in front of the camera",
+          variant: "destructive",
+        });
+      }
+    } catch (error) {
+      console.error("Manual capture error:", error);
+      setDetectionStatus("Capture failed");
+      toast({
+        title: "Capture Error",
+        description: "Failed to process face capture",
+        variant: "destructive",
+      });
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+
+  const toggleAutoMode = (enabled: boolean) => {
+    setIsAutoMode(enabled);
+    if (isCapturing) {
+      if (enabled) {
+        startContinuousDetection();
+      } else {
+        stopAutoDetection();
+        setDetectionStatus("Manual mode - Click capture");
+      }
+    }
+  };
+
   return (
     <Card className="w-full max-w-3xl mx-auto">
       <CardHeader>
@@ -354,7 +466,7 @@ export const FaceRecognitionAttendance = () => {
           </Alert>
         )}
 
-        <div className="grid gap-4 md:grid-cols-2">
+        <div className="grid gap-4 md:grid-cols-3">
           <div className="space-y-2">
             <label className="text-sm font-medium">Course Name</label>
             <Select value={courseName} onValueChange={setCourseName} disabled={isCapturing}>
@@ -370,6 +482,22 @@ export const FaceRecognitionAttendance = () => {
               </SelectContent>
             </Select>
           </div>
+
+          {/* Mode Toggle */}
+          <div className="space-y-2">
+            <label className="text-sm font-medium">Detection Mode</label>
+            <div className="flex items-center gap-3 h-10 px-3 rounded-md border bg-background">
+              <Hand className="w-4 h-4 text-muted-foreground" />
+              <span className="text-sm text-muted-foreground">Manual</span>
+              <Switch 
+                checked={isAutoMode} 
+                onCheckedChange={toggleAutoMode}
+                disabled={!isCapturing}
+              />
+              <span className="text-sm text-muted-foreground">Auto</span>
+              <Play className="w-4 h-4 text-muted-foreground" />
+            </div>
+          </div>
           
           <div className="flex items-end gap-2">
             {!isCapturing ? (
@@ -379,8 +507,8 @@ export const FaceRecognitionAttendance = () => {
               </Button>
             ) : (
               <Button onClick={stopCapture} variant="destructive" className="flex-1">
-                <XCircle className="w-4 h-4 mr-2" />
-                Stop
+                <Square className="w-4 h-4 mr-2" />
+                Stop Camera
               </Button>
             )}
           </div>
@@ -420,6 +548,35 @@ export const FaceRecognitionAttendance = () => {
               {isCapturing && (
                 <div className="absolute top-3 right-3 px-3 py-1.5 rounded-full text-sm font-medium bg-background/80 text-foreground">
                   {faceDataCache.length} faces loaded
+                </div>
+              )}
+
+              {/* Flash effect overlay */}
+              {showFlash && (
+                <div className="absolute inset-0 bg-white animate-[flash_0.15s_ease-out] pointer-events-none" />
+              )}
+
+              {/* Manual Capture Button - Floating */}
+              {isCapturing && !isAutoMode && (
+                <button
+                  onClick={manualCapture}
+                  disabled={isProcessing}
+                  className="absolute bottom-4 left-1/2 -translate-x-1/2 w-16 h-16 rounded-full bg-primary hover:bg-primary/90 text-primary-foreground shadow-lg flex items-center justify-center transition-all hover:scale-105 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {isProcessing ? (
+                    <Loader2 className="w-8 h-8 animate-spin" />
+                  ) : (
+                    <Camera className="w-8 h-8" />
+                  )}
+                </button>
+              )}
+
+              {/* Mode indicator badge */}
+              {isCapturing && (
+                <div className={`absolute bottom-3 left-3 px-3 py-1.5 rounded-full text-xs font-medium ${
+                  isAutoMode ? 'bg-green-500/90 text-white' : 'bg-orange-500/90 text-white'
+                }`}>
+                  {isAutoMode ? '🔄 Auto Mode' : '👆 Manual Mode'}
                 </div>
               )}
               
