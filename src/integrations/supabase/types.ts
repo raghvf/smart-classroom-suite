@@ -60,6 +60,13 @@ export type Database = {
             referencedRelation: "students"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "attendance_student_id_fkey"
+            columns: ["student_id"]
+            isOneToOne: false
+            referencedRelation: "students_public"
+            referencedColumns: ["id"]
+          },
         ]
       }
       face_data: {
@@ -96,6 +103,13 @@ export type Database = {
             columns: ["student_id"]
             isOneToOne: false
             referencedRelation: "students"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "face_data_student_id_fkey"
+            columns: ["student_id"]
+            isOneToOne: false
+            referencedRelation: "students_public"
             referencedColumns: ["id"]
           },
           {
@@ -218,7 +232,53 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      students_public: {
+        Row: {
+          batch: string | null
+          created_at: string | null
+          department: string | null
+          enrollment_date: string | null
+          id: string | null
+          semester: number | null
+          status: string | null
+          student_id: string | null
+          updated_at: string | null
+          user_id: string | null
+        }
+        Insert: {
+          batch?: string | null
+          created_at?: string | null
+          department?: string | null
+          enrollment_date?: string | null
+          id?: string | null
+          semester?: number | null
+          status?: string | null
+          student_id?: string | null
+          updated_at?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          batch?: string | null
+          created_at?: string | null
+          department?: string | null
+          enrollment_date?: string | null
+          id?: string | null
+          semester?: number | null
+          status?: string | null
+          student_id?: string | null
+          updated_at?: string | null
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "students_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: true
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Functions: {
       has_role: {
