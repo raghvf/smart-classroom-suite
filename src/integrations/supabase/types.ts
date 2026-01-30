@@ -152,6 +152,7 @@ export type Database = {
         Row: {
           address: string | null
           batch: string
+          cgpa: number | null
           created_at: string
           department: string
           enrollment_date: string
@@ -166,6 +167,7 @@ export type Database = {
         Insert: {
           address?: string | null
           batch: string
+          cgpa?: number | null
           created_at?: string
           department: string
           enrollment_date?: string
@@ -180,6 +182,7 @@ export type Database = {
         Update: {
           address?: string | null
           batch?: string
+          cgpa?: number | null
           created_at?: string
           department?: string
           enrollment_date?: string
