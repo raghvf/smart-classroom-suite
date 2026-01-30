@@ -9,10 +9,12 @@ import { Switch } from "@/components/ui/switch";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
-import { Save, Camera, User, GraduationCap, BookOpen } from "lucide-react";
-import { useQuery } from "@tanstack/react-query";
+import { Save, Camera, User, GraduationCap, BookOpen, Loader2 } from "lucide-react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Skeleton } from "@/components/ui/skeleton";
+import { toast } from "sonner";
+import { useRef, useState } from "react";
 import {
   Table,
   TableBody,
@@ -24,6 +26,9 @@ import {
 
 export default function Settings() {
   const user = getStoredUser();
+  const queryClient = useQueryClient();
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [isUploading, setIsUploading] = useState(false);
 
   // Fetch student details
   const { data: studentData, isLoading: studentLoading } = useQuery({
@@ -102,6 +107,71 @@ export default function Settings() {
     return "bg-red-500";
   };
 
+  const handlePhotoUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file || !user) return;
+
+    // Validate file type
+    if (!file.type.startsWith('image/')) {
+      toast.error('Please select an image file');
+      return;
+    }
+
+    // Validate file size (max 5MB)
+    if (file.size > 5 * 1024 * 1024) {
+      toast.error('Image size must be less than 5MB');
+      return;
+    }
+
+    setIsUploading(true);
+
+    try {
+      const fileExt = file.name.split('.').pop();
+      const fileName = `${user.id}/avatar.${fileExt}`;
+
+      // Delete existing avatar if present
+      await supabase.storage.from('avatars').remove([fileName]);
+
+      // Upload new avatar
+      const { error: uploadError } = await supabase.storage
+        .from('avatars')
+        .upload(fileName, file, { upsert: true });
+
+      if (uploadError) throw uploadError;
+
+      // Get public URL
+      const { data: { publicUrl } } = supabase.storage
+        .from('avatars')
+        .getPublicUrl(fileName);
+
+      // Update profile with new avatar URL
+      const { error: updateError } = await supabase
+        .from('profiles')
+        .update({ avatar: publicUrl })
+        .eq('id', user.id);
+
+      if (updateError) throw updateError;
+
+      // Update local storage
+      const updatedUser = { ...user, avatar: publicUrl };
+      localStorage.setItem('user', JSON.stringify(updatedUser));
+
+      // Invalidate queries to refresh data
+      queryClient.invalidateQueries({ queryKey: ['student-profile'] });
+
+      toast.success('Profile photo updated successfully!');
+    } catch (error: any) {
+      console.error('Upload error:', error);
+      toast.error(error.message || 'Failed to upload photo');
+    } finally {
+      setIsUploading(false);
+      // Reset file input
+      if (fileInputRef.current) {
+        fileInputRef.current.value = '';
+      }
+    }
+  };
+
   return (
     <MainLayout user={user}>
       <div className="space-y-6">
@@ -130,12 +200,26 @@ export default function Settings() {
                       {getInitials(user.name)}
                     </AvatarFallback>
                   </Avatar>
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    accept="image/*"
+                    onChange={handlePhotoUpload}
+                    className="hidden"
+                    id="avatar-upload"
+                  />
                   <Button 
                     size="icon" 
                     variant="secondary" 
                     className="absolute bottom-0 right-0 rounded-full shadow-lg"
+                    onClick={() => fileInputRef.current?.click()}
+                    disabled={isUploading}
                   >
-                    <Camera className="w-4 h-4" />
+                    {isUploading ? (
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                    ) : (
+                      <Camera className="w-4 h-4" />
+                    )}
                   </Button>
                 </div>
                 <Badge variant="secondary" className="text-sm">
