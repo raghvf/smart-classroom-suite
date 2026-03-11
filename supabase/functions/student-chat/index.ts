@@ -67,7 +67,7 @@ serve(async (req) => {
             role: "system", 
             content: "You are a helpful AI assistant for college students. You help answer questions about attendance policies, course information, academic schedules, and general student queries. Be friendly, concise, and informative. If you don't have specific information about their college's policies, provide general helpful guidance and suggest they contact their faculty or administration for exact details."
           },
-          ...messages,
+          ...safeMessages,
         ],
         stream: true,
       }),
