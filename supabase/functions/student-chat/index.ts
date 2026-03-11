@@ -36,7 +36,18 @@ serve(async (req) => {
       );
     }
 
-    const { messages } = await req.json();
+    const body = await req.json();
+    const rawMessages = Array.isArray(body?.messages) ? body.messages : [];
+
+    // Sanitize messages: filter roles, limit count and length
+    const safeMessages = rawMessages
+      .filter((m: any) => m && (m.role === 'user' || m.role === 'assistant'))
+      .slice(-20)
+      .map((m: any) => ({
+        role: m.role as string,
+        content: String(m.content || '').slice(0, 2000),
+      }));
+
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
     
     if (!LOVABLE_API_KEY) {
