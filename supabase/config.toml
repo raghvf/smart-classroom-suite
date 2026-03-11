@@ -1,7 +1,7 @@
 project_id = "dgfsqwjuxpckydzyjeza"
 
 [functions.student-chat]
-verify_jwt = true
+verify_jwt = false
 
 [functions.attendance-insights]
-verify_jwt = true
+verify_jwt = false
