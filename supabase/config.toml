@@ -4,4 +4,4 @@ project_id = "dgfsqwjuxpckydzyjeza"
 verify_jwt = false
 
 [functions.attendance-insights]
-verify_jwt = true
+verify_jwt = false
