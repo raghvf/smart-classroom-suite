@@ -28,10 +28,9 @@ const recentAlerts = [
 ];
 
 export default function AdminDashboard() {
-  const user = getStoredUser();
+  const { user } = useAuth();
 
-  if (!user || user.role !== "admin") {
-    window.location.href = "/auth/login";
+  if (!user) {
     return null;
   }
 
