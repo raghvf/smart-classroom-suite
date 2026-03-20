@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Trash2, Users, RefreshCw } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import { getStoredUser } from "@/lib/auth";
+import { useAuth } from "@/hooks/useAuth";
 import { Navigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 
