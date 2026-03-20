@@ -45,7 +45,7 @@ interface StudentFormData {
 }
 
 export default function Students() {
-  const user = getStoredUser();
+  const { user } = useAuth();
   const { toast } = useToast();
   const [students, setStudents] = useState<Student[]>([]);
   const [isLoading, setIsLoading] = useState(true);

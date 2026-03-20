@@ -5,11 +5,9 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Clock, MapPin } from "lucide-react";
 
 export default function Timetable() {
-  const user = getStoredUser();
+  const { user } = useAuth();
 
-  if (!user || user.role !== "student") {
-    return <Navigate to="/auth/login" replace />;
-  }
+  if (!user) return null;
 
   const days = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday"];
   

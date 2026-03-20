@@ -5,12 +5,9 @@ import { Button } from "@/components/ui/button";
 import { Clock, Users, BookOpen, CheckCircle } from "lucide-react";
 
 export default function FacultyDashboard() {
-  const user = getStoredUser();
+  const { user } = useAuth();
 
-  if (!user || user.role !== "faculty") {
-    window.location.href = "/auth/login";
-    return null;
-  }
+  if (!user) return null;
 
   return (
     <MainLayout user={user}>

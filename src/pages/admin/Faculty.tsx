@@ -28,7 +28,7 @@ interface FacultyMember {
 }
 
 export default function Faculty() {
-  const user = getStoredUser();
+  const { user } = useAuth();
   const { toast } = useToast();
   const [searchTerm, setSearchTerm] = useState("");
   const [isFaceDialogOpen, setIsFaceDialogOpen] = useState(false);

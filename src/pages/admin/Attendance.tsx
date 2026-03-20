@@ -6,11 +6,9 @@ import { StatCard } from "@/components/ui/stat-card";
 import { Users, CheckCircle, XCircle, AlertTriangle } from "lucide-react";
 
 export default function Attendance() {
-  const user = getStoredUser();
+  const { user } = useAuth();
 
-  if (!user || user.role !== "admin") {
-    return <Navigate to="/auth/login" replace />;
-  }
+  if (!user) return null;
 
   return (
     <MainLayout user={user}>

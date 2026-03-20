@@ -6,11 +6,9 @@ import { Button } from "@/components/ui/button";
 import { Calendar as CalendarIcon, Plus, Clock } from "lucide-react";
 
 export default function Timetable() {
-  const user = getStoredUser();
+  const { user } = useAuth();
 
-  if (!user || user.role !== "admin") {
-    return <Navigate to="/auth/login" replace />;
-  }
+  if (!user) return null;
 
   const days = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday"];
   const timeSlots = ["09:00", "11:00", "14:00", "16:00"];

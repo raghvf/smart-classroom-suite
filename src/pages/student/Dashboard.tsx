@@ -7,13 +7,10 @@ import { Calendar, BookOpen, TrendingUp, MessageSquare, Brain } from "lucide-rea
 import { useNavigate } from "react-router-dom";
 
 export default function StudentDashboard() {
-  const user = getStoredUser();
+  const { user } = useAuth();
   const navigate = useNavigate();
 
-  if (!user || user.role !== "student") {
-    window.location.href = "/auth/login";
-    return null;
-  }
+  if (!user) return null;
 
   return (
     <MainLayout user={user}>

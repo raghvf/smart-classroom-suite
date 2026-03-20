@@ -9,11 +9,9 @@ import { Switch } from "@/components/ui/switch";
 import { Save } from "lucide-react";
 
 export default function Settings() {
-  const user = getStoredUser();
+  const { user } = useAuth();
 
-  if (!user || user.role !== "faculty") {
-    return <Navigate to="/auth/login" replace />;
-  }
+  if (!user) return null;
 
   return (
     <MainLayout user={user}>

@@ -6,11 +6,9 @@ import { Button } from "@/components/ui/button";
 import { Bell, Send, Users, AlertCircle } from "lucide-react";
 
 export default function Notifications() {
-  const user = getStoredUser();
+  const { user } = useAuth();
 
-  if (!user || user.role !== "admin") {
-    return <Navigate to="/auth/login" replace />;
-  }
+  if (!user) return null;
 
   return (
     <MainLayout user={user}>

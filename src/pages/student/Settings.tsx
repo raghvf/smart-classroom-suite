@@ -25,7 +25,7 @@ import {
 } from "@/components/ui/table";
 
 export default function Settings() {
-  const user = getStoredUser();
+  const { user } = useAuth();
   const queryClient = useQueryClient();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [isUploading, setIsUploading] = useState(false);

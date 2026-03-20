@@ -7,11 +7,9 @@ import { Badge } from "@/components/ui/badge";
 import { CheckCircle, XCircle, Calendar } from "lucide-react";
 
 export default function Attendance() {
-  const user = getStoredUser();
+  const { user } = useAuth();
 
-  if (!user || user.role !== "student") {
-    return <Navigate to="/auth/login" replace />;
-  }
+  if (!user) return null;
 
   const courses = [
     { name: "Mathematics", present: 28, total: 32, percentage: 87.5 },

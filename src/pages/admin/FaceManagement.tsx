@@ -22,7 +22,7 @@ interface FaceRecord {
 }
 
 export default function FaceManagement() {
-  const user = getStoredUser();
+  const { user } = useAuth();
   const [faceData, setFaceData] = useState<FaceRecord[]>([]);
   const [loading, setLoading] = useState(true);
   const { toast } = useToast();
