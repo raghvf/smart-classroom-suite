@@ -277,9 +277,7 @@ export default function Faculty() {
     }
   };
 
-  if (!user || user.role !== "admin") {
-    return <Navigate to="/auth/login" replace />;
-  }
+  if (!user) return null;
 
   const filteredFaculty = facultyMembers.filter(f => 
     f.name.toLowerCase().includes(searchTerm.toLowerCase()) ||

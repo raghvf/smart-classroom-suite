@@ -273,9 +273,7 @@ export default function Students() {
     student.department.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
-  if (!user || user.role !== 'admin') {
-    return <Navigate to="/auth/login" replace />;
-  }
+  if (!user) return null;
 
   return (
     <MainLayout user={user}>
