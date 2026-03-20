@@ -1,5 +1,5 @@
 import { MainLayout } from "@/components/layout/MainLayout";
-import { getStoredUser } from "@/lib/auth";
+import { useAuth } from "@/hooks/useAuth";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { Button } from "@/components/ui/button";
@@ -7,13 +7,10 @@ import { Calendar, BookOpen, TrendingUp, MessageSquare, Brain } from "lucide-rea
 import { useNavigate } from "react-router-dom";
 
 export default function StudentDashboard() {
-  const user = getStoredUser();
+  const { user } = useAuth();
   const navigate = useNavigate();
 
-  if (!user || user.role !== "student") {
-    window.location.href = "/auth/login";
-    return null;
-  }
+  if (!user) return null;
 
   return (
     <MainLayout user={user}>

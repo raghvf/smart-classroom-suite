@@ -1,16 +1,14 @@
 import { MainLayout } from "@/components/layout/MainLayout";
-import { getStoredUser } from "@/lib/auth";
+import { useAuth } from "@/hooks/useAuth";
 import { Navigate } from "react-router-dom";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Bell, Mail, AlertCircle } from "lucide-react";
 
 export default function Notifications() {
-  const user = getStoredUser();
+  const { user } = useAuth();
 
-  if (!user || user.role !== "faculty") {
-    return <Navigate to="/auth/login" replace />;
-  }
+  if (!user) return null;
 
   const notifications = [
     { id: 1, title: "New student enrolled", message: "John Doe enrolled in CS 101", time: "1 hour ago", type: "info", read: false },

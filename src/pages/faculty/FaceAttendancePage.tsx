@@ -1,15 +1,13 @@
 import { MainLayout } from "@/components/layout/MainLayout";
 import { FaceRecognitionAttendance } from "@/components/FaceRecognitionAttendance";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { getStoredUser } from "@/lib/auth";
+import { useAuth } from "@/hooks/useAuth";
 import { Navigate } from "react-router-dom";
 
 export default function FaceAttendancePage() {
-  const user = getStoredUser();
+  const { user } = useAuth();
 
-  if (!user || user.role !== "faculty") {
-    return <Navigate to="/auth/login" replace />;
-  }
+  if (!user) return null;
 
   return (
     <MainLayout user={user}>

@@ -8,7 +8,7 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
-import { getStoredUser } from '@/lib/auth';
+import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { Navigate } from 'react-router-dom';
 import { Plus, Pencil, Trash2, Search, UserPlus, Camera } from 'lucide-react';
@@ -45,7 +45,7 @@ interface StudentFormData {
 }
 
 export default function Students() {
-  const user = getStoredUser();
+  const { user } = useAuth();
   const { toast } = useToast();
   const [students, setStudents] = useState<Student[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -273,9 +273,7 @@ export default function Students() {
     student.department.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
-  if (!user || user.role !== 'admin') {
-    return <Navigate to="/auth/login" replace />;
-  }
+  if (!user) return null;
 
   return (
     <MainLayout user={user}>

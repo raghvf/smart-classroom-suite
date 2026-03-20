@@ -1,5 +1,5 @@
 import { MainLayout } from "@/components/layout/MainLayout";
-import { getStoredUser } from "@/lib/auth";
+import { useAuth } from "@/hooks/useAuth";
 import { Navigate } from "react-router-dom";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -7,11 +7,9 @@ import { Button } from "@/components/ui/button";
 import { Users, Clock, BookOpen } from "lucide-react";
 
 export default function Classes() {
-  const user = getStoredUser();
+  const { user } = useAuth();
 
-  if (!user || user.role !== "faculty") {
-    return <Navigate to="/auth/login" replace />;
-  }
+  if (!user) return null;
 
   const classes = [
     { id: 1, name: "Computer Science 101", students: 45, schedule: "Mon, Wed 09:00 AM", room: "Lab 305" },

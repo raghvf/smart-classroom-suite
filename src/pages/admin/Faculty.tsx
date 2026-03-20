@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { MainLayout } from "@/components/layout/MainLayout";
-import { getStoredUser } from "@/lib/auth";
+import { useAuth } from "@/hooks/useAuth";
 import { Navigate } from "react-router-dom";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -28,7 +28,7 @@ interface FacultyMember {
 }
 
 export default function Faculty() {
-  const user = getStoredUser();
+  const { user } = useAuth();
   const { toast } = useToast();
   const [searchTerm, setSearchTerm] = useState("");
   const [isFaceDialogOpen, setIsFaceDialogOpen] = useState(false);
@@ -277,9 +277,7 @@ export default function Faculty() {
     }
   };
 
-  if (!user || user.role !== "admin") {
-    return <Navigate to="/auth/login" replace />;
-  }
+  if (!user) return null;
 
   const filteredFaculty = facultyMembers.filter(f => 
     f.name.toLowerCase().includes(searchTerm.toLowerCase()) ||

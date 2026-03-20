@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Trash2, Users, RefreshCw } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import { getStoredUser } from "@/lib/auth";
+import { useAuth } from "@/hooks/useAuth";
 import { Navigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -22,14 +22,10 @@ interface FaceRecord {
 }
 
 export default function FaceManagement() {
-  const user = getStoredUser();
+  const { user } = useAuth();
   const [faceData, setFaceData] = useState<FaceRecord[]>([]);
   const [loading, setLoading] = useState(true);
   const { toast } = useToast();
-
-  if (!user || user.role !== "admin") {
-    return <Navigate to="/auth/login" replace />;
-  }
 
   const fetchFaceData = async () => {
     setLoading(true);

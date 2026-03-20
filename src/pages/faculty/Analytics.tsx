@@ -1,5 +1,5 @@
 import { MainLayout } from "@/components/layout/MainLayout";
-import { getStoredUser } from "@/lib/auth";
+import { useAuth } from "@/hooks/useAuth";
 import { Navigate } from "react-router-dom";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { StatCard } from "@/components/ui/stat-card";
@@ -8,11 +8,9 @@ import { Bar, BarChart, CartesianGrid, Legend, ResponsiveContainer, Tooltip, XAx
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart";
 
 export default function Analytics() {
-  const user = getStoredUser();
+  const { user } = useAuth();
 
-  if (!user || user.role !== "faculty") {
-    return <Navigate to="/auth/login" replace />;
-  }
+  if (!user) return null;
 
   const performanceData = [
     { class: "CS 101", avgAttendance: 85, avgGrade: 78 },

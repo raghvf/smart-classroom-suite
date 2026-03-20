@@ -1,16 +1,14 @@
 import { MainLayout } from "@/components/layout/MainLayout";
-import { getStoredUser } from "@/lib/auth";
+import { useAuth } from "@/hooks/useAuth";
 import { Navigate } from "react-router-dom";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Upload, FileText, Video, Image, Download } from "lucide-react";
 
 export default function Resources() {
-  const user = getStoredUser();
+  const { user } = useAuth();
 
-  if (!user || user.role !== "admin") {
-    return <Navigate to="/auth/login" replace />;
-  }
+  if (!user) return null;
 
   return (
     <MainLayout user={user}>

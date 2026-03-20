@@ -1,5 +1,5 @@
 import { MainLayout } from "@/components/layout/MainLayout";
-import { getStoredUser } from "@/lib/auth";
+import { useAuth } from "@/hooks/useAuth";
 import { Navigate } from "react-router-dom";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
@@ -7,11 +7,9 @@ import { Badge } from "@/components/ui/badge";
 import { CheckCircle, XCircle, Calendar } from "lucide-react";
 
 export default function Attendance() {
-  const user = getStoredUser();
+  const { user } = useAuth();
 
-  if (!user || user.role !== "student") {
-    return <Navigate to="/auth/login" replace />;
-  }
+  if (!user) return null;
 
   const courses = [
     { name: "Mathematics", present: 28, total: 32, percentage: 87.5 },

@@ -1,5 +1,5 @@
 import { MainLayout } from "@/components/layout/MainLayout";
-import { getStoredUser } from "@/lib/auth";
+import { useAuth } from "@/hooks/useAuth";
 import { Navigate } from "react-router-dom";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { StatCard } from "@/components/ui/stat-card";
@@ -8,11 +8,9 @@ import { Line, LineChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YA
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart";
 
 export default function Analytics() {
-  const user = getStoredUser();
+  const { user } = useAuth();
 
-  if (!user || user.role !== "student") {
-    return <Navigate to="/auth/login" replace />;
-  }
+  if (!user) return null;
 
   const attendanceData = [
     { week: "Week 1", rate: 85 },
