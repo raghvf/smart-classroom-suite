@@ -27,10 +27,6 @@ export default function FaceManagement() {
   const [loading, setLoading] = useState(true);
   const { toast } = useToast();
 
-  if (!user || user.role !== "admin") {
-    return <Navigate to="/auth/login" replace />;
-  }
-
   const fetchFaceData = async () => {
     setLoading(true);
     try {
