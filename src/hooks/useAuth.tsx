@@ -18,13 +18,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
 
-  const fetchUserProfile = async (userId: string, email: string): Promise<User | null> => {
+  const fetchUserProfile = async (userId: string): Promise<User | null> => {
     const [profileResult, roleResult] = await Promise.all([
       supabase.from('profiles').select('*').eq('id', userId).single(),
       supabase.from('user_roles').select('role').eq('user_id', userId).single(),
     ]);
 
-    if (!profileResult.data) return null;
+    if (profileResult.error || !profileResult.data) {
+      console.error('Failed to load profile', profileResult.error);
+      return null;
+    }
+
+    if (roleResult.error && roleResult.error.code !== 'PGRST116') {
+      console.error('Failed to load role', roleResult.error);
+    }
 
     return {
       id: profileResult.data.id,
@@ -36,29 +43,53 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   useEffect(() => {
-    // Get initial session
-    supabase.auth.getSession().then(async ({ data: { session: s } }) => {
-      setSession(s);
-      if (s?.user) {
-        const u = await fetchUserProfile(s.user.id, s.user.email || '');
-        setUser(u);
-      }
-      setLoading(false);
-    });
+    let isMounted = true;
+    let syncRequestId = 0;
 
-    // Listen for auth changes
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, s) => {
-      setSession(s);
-      if (s?.user) {
-        const u = await fetchUserProfile(s.user.id, s.user.email || '');
-        setUser(u);
-      } else {
+    const syncAuthState = async (nextSession: Session | null) => {
+      const requestId = ++syncRequestId;
+
+      setSession(nextSession);
+
+      if (!nextSession?.user) {
+        if (!isMounted || requestId !== syncRequestId) return;
         setUser(null);
+        setLoading(false);
+        return;
       }
-      setLoading(false);
+
+      try {
+        const nextUser = await fetchUserProfile(nextSession.user.id);
+
+        if (!isMounted || requestId !== syncRequestId) return;
+        setUser(nextUser);
+      } catch (error) {
+        console.error('Failed to sync auth state', error);
+        if (!isMounted || requestId !== syncRequestId) return;
+        setUser(null);
+      } finally {
+        if (isMounted && requestId === syncRequestId) {
+          setLoading(false);
+        }
+      }
+    };
+
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((_event, nextSession) => {
+      setLoading(true);
+      void syncAuthState(nextSession);
     });
 
-    return () => subscription.unsubscribe();
+    void supabase.auth.getSession().then(({ data: { session: initialSession } }) => {
+      setLoading(true);
+      void syncAuthState(initialSession);
+    });
+
+    return () => {
+      isMounted = false;
+      subscription.unsubscribe();
+    };
   }, []);
 
   return (
