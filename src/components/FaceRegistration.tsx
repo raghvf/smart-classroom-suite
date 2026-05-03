@@ -90,6 +90,7 @@ export const FaceRegistration = ({ onComplete }: FaceRegistrationProps) => {
     }
 
     try {
+      setIsCapturing(true);
       const mediaStream = await navigator.mediaDevices.getUserMedia({
         video: { 
           width: { ideal: 640 }, 
@@ -99,21 +100,10 @@ export const FaceRegistration = ({ onComplete }: FaceRegistrationProps) => {
       });
       
       setStream(mediaStream);
-
-      if (videoRef.current) {
-        videoRef.current.srcObject = mediaStream;
-        videoRef.current.onloadedmetadata = () => {
-          videoRef.current?.play();
-          setCameraReady(true);
-          setIsCapturing(true);
-          toast({
-            title: "Camera Ready",
-            description: "Click 'Capture Photo' to take pictures",
-          });
-        };
-      }
     } catch (error) {
       console.error("Camera error:", error);
+      setIsCapturing(false);
+      setCameraReady(false);
       toast({
         title: "Camera Error",
         description: "Could not access camera. Please check permissions.",
@@ -121,6 +111,21 @@ export const FaceRegistration = ({ onComplete }: FaceRegistrationProps) => {
       });
     }
   };
+
+  useEffect(() => {
+    if (!stream || !videoRef.current) return;
+
+    const video = videoRef.current;
+    video.srcObject = stream;
+    video.onloadedmetadata = () => {
+      video.play();
+      setCameraReady(true);
+      toast({
+        title: "Camera Ready",
+        description: "Use Manual Capture to take photos",
+      });
+    };
+  }, [stream, toast]);
 
   const capturePhoto = useCallback(() => {
     if (!videoRef.current || !canvasRef.current || !cameraReady) {
