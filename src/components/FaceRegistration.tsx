@@ -366,8 +366,16 @@ export const FaceRegistration = ({ onComplete }: FaceRegistrationProps) => {
                   <img 
                     src={photo} 
                     alt={`Capture ${index + 1}`}
-                    className="w-full h-full object-cover rounded border border-border"
+                    className="w-full h-full object-cover rounded border border-border cursor-pointer"
+                    onClick={() => setPreviewPhoto(photo)}
                   />
+                  <button
+                    onClick={() => setPreviewPhoto(photo)}
+                    className="absolute inset-0 flex items-center justify-center bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity rounded"
+                    title="Preview"
+                  >
+                    <Eye className="h-5 w-5 text-white" />
+                  </button>
                   <button
                     onClick={() => removePhoto(index)}
                     className="absolute -top-1 -right-1 bg-destructive text-destructive-foreground rounded-full p-0.5 opacity-0 group-hover:opacity-100 transition-opacity"
