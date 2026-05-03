@@ -18,9 +18,17 @@ interface FaceRegistrationProps {
   onComplete?: () => void;
 }
 
+interface StudentOption {
+  id: string;
+  student_id: string;
+  profiles?: {
+    name?: string | null;
+  } | null;
+}
+
 export const FaceRegistration = ({ onComplete }: FaceRegistrationProps) => {
   const [studentId, setStudentId] = useState("");
-  const [students, setStudents] = useState<any[]>([]);
+  const [students, setStudents] = useState<StudentOption[]>([]);
   const [isCapturing, setIsCapturing] = useState(false);
   const [capturedPhotos, setCapturedPhotos] = useState<string[]>([]);
   const [stream, setStream] = useState<MediaStream | null>(null);
@@ -215,9 +223,9 @@ export const FaceRegistration = ({ onComplete }: FaceRegistrationProps) => {
         .maybeSingle();
 
       // Store photos as descriptors (simplified - in production use actual face embeddings)
-      const photoDescriptors = capturedPhotos.map((photo, index) => 
+      const photoDescriptors = capturedPhotos.map(() => 
         // Create a simple placeholder descriptor for demo
-        Array(128).fill(0).map((_, i) => Math.random())
+        Array.from({ length: 128 }, () => Math.random())
       );
 
       if (existing) {
@@ -251,11 +259,12 @@ export const FaceRegistration = ({ onComplete }: FaceRegistrationProps) => {
       setStudentId("");
       onComplete?.();
       
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error("Save error:", error);
+      const message = error instanceof Error ? error.message : "Failed to save photos";
       toast({
         title: "Save Error",
-        description: error.message || "Failed to save photos",
+        description: message,
         variant: "destructive",
       });
     } finally {
