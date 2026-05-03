@@ -18,9 +18,17 @@ interface FaceRegistrationProps {
   onComplete?: () => void;
 }
 
+interface StudentOption {
+  id: string;
+  student_id: string;
+  profiles?: {
+    name?: string | null;
+  } | null;
+}
+
 export const FaceRegistration = ({ onComplete }: FaceRegistrationProps) => {
   const [studentId, setStudentId] = useState("");
-  const [students, setStudents] = useState<any[]>([]);
+  const [students, setStudents] = useState<StudentOption[]>([]);
   const [isCapturing, setIsCapturing] = useState(false);
   const [capturedPhotos, setCapturedPhotos] = useState<string[]>([]);
   const [stream, setStream] = useState<MediaStream | null>(null);
@@ -35,9 +43,6 @@ export const FaceRegistration = ({ onComplete }: FaceRegistrationProps) => {
 
   useEffect(() => {
     fetchStudents();
-    return () => {
-      stopCamera();
-    };
   }, []);
 
   const fetchStudents = async () => {
@@ -90,6 +95,7 @@ export const FaceRegistration = ({ onComplete }: FaceRegistrationProps) => {
     }
 
     try {
+      setIsCapturing(true);
       const mediaStream = await navigator.mediaDevices.getUserMedia({
         video: { 
           width: { ideal: 640 }, 
@@ -99,21 +105,10 @@ export const FaceRegistration = ({ onComplete }: FaceRegistrationProps) => {
       });
       
       setStream(mediaStream);
-
-      if (videoRef.current) {
-        videoRef.current.srcObject = mediaStream;
-        videoRef.current.onloadedmetadata = () => {
-          videoRef.current?.play();
-          setCameraReady(true);
-          setIsCapturing(true);
-          toast({
-            title: "Camera Ready",
-            description: "Click 'Capture Photo' to take pictures",
-          });
-        };
-      }
     } catch (error) {
       console.error("Camera error:", error);
+      setIsCapturing(false);
+      setCameraReady(false);
       toast({
         title: "Camera Error",
         description: "Could not access camera. Please check permissions.",
@@ -121,6 +116,21 @@ export const FaceRegistration = ({ onComplete }: FaceRegistrationProps) => {
       });
     }
   };
+
+  useEffect(() => {
+    if (!stream || !videoRef.current) return;
+
+    const video = videoRef.current;
+    video.srcObject = stream;
+    video.onloadedmetadata = () => {
+      video.play();
+      setCameraReady(true);
+      toast({
+        title: "Camera Ready",
+        description: "Use Manual Capture to take photos",
+      });
+    };
+  }, [stream, toast]);
 
   const capturePhoto = useCallback(() => {
     if (!videoRef.current || !canvasRef.current || !cameraReady) {
@@ -188,6 +198,12 @@ export const FaceRegistration = ({ onComplete }: FaceRegistrationProps) => {
     setIsCapturing(false);
   };
 
+  useEffect(() => {
+    return () => {
+      stream?.getTracks().forEach(track => track.stop());
+    };
+  }, [stream]);
+
   const savePhotos = async () => {
     if (capturedPhotos.length === 0) {
       toast({
@@ -210,9 +226,9 @@ export const FaceRegistration = ({ onComplete }: FaceRegistrationProps) => {
         .maybeSingle();
 
       // Store photos as descriptors (simplified - in production use actual face embeddings)
-      const photoDescriptors = capturedPhotos.map((photo, index) => 
+      const photoDescriptors = capturedPhotos.map(() => 
         // Create a simple placeholder descriptor for demo
-        Array(128).fill(0).map((_, i) => Math.random())
+        Array.from({ length: 128 }, () => Math.random())
       );
 
       if (existing) {
@@ -246,11 +262,12 @@ export const FaceRegistration = ({ onComplete }: FaceRegistrationProps) => {
       setStudentId("");
       onComplete?.();
       
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error("Save error:", error);
+      const message = error instanceof Error ? error.message : "Failed to save photos";
       toast({
         title: "Save Error",
-        description: error.message || "Failed to save photos",
+        description: message,
         variant: "destructive",
       });
     } finally {
@@ -284,6 +301,11 @@ export const FaceRegistration = ({ onComplete }: FaceRegistrationProps) => {
         {isCapturing && (
           <div className="space-y-3">
             <div className="relative aspect-video bg-muted rounded-lg overflow-hidden">
+              {!cameraReady && (
+                <div className="absolute inset-0 z-10 flex items-center justify-center text-sm text-muted-foreground">
+                  Waiting for camera permission...
+                </div>
+              )}
               <video
                 ref={videoRef}
                 autoPlay
@@ -326,16 +348,29 @@ export const FaceRegistration = ({ onComplete }: FaceRegistrationProps) => {
               </div>
             </div>
 
-            {/* Additional capture button below */}
-            <Button 
-              onClick={capturePhoto} 
-              className="w-full" 
-              size="lg"
-              disabled={!cameraReady || capturedPhotos.length >= targetCaptures}
-            >
-              <Camera className="mr-2 h-5 w-5" />
-              📸 Manual Capture ({capturedPhotos.length}/{targetCaptures})
-            </Button>
+            <div className="grid grid-cols-3 gap-2">
+              <Button 
+                onClick={capturePhoto} 
+                size="lg"
+                disabled={!cameraReady || capturedPhotos.length >= targetCaptures}
+              >
+                <Camera className="mr-2 h-5 w-5" />
+                Manual Capture
+              </Button>
+              <Button
+                variant="outline"
+                size="lg"
+                onClick={() => setPreviewPhoto(capturedPhotos[capturedPhotos.length - 1])}
+                disabled={capturedPhotos.length === 0}
+              >
+                <Eye className="mr-2 h-5 w-5" />
+                Preview
+              </Button>
+              <Button variant="outline" size="lg" onClick={stopCamera}>
+                <X className="mr-2 h-5 w-5" />
+                Stop Camera
+              </Button>
+            </div>
           </div>
         )}
 
@@ -410,7 +445,7 @@ export const FaceRegistration = ({ onComplete }: FaceRegistrationProps) => {
             </Button>
           ) : (
             <>
-              <Button variant="outline" onClick={stopCamera} className="flex-1">
+              <Button variant="outline" onClick={stopCamera} className="flex-1 md:hidden">
                 <X className="mr-2 h-4 w-4" />
                 Stop Camera
               </Button>
