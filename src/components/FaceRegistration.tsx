@@ -1,8 +1,9 @@
 import { useState, useRef, useEffect, useCallback } from "react";
-import { Camera, Check, X, Trash2, ImageIcon } from "lucide-react";
+import { Camera, Check, X, Trash2, ImageIcon, Eye } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Card } from "@/components/ui/card";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import {
   Select,
   SelectContent,
@@ -26,6 +27,7 @@ export const FaceRegistration = ({ onComplete }: FaceRegistrationProps) => {
   const [cameraReady, setCameraReady] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [showFlash, setShowFlash] = useState(false);
+  const [previewPhoto, setPreviewPhoto] = useState<string | null>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const { toast } = useToast();
@@ -364,8 +366,16 @@ export const FaceRegistration = ({ onComplete }: FaceRegistrationProps) => {
                   <img 
                     src={photo} 
                     alt={`Capture ${index + 1}`}
-                    className="w-full h-full object-cover rounded border border-border"
+                    className="w-full h-full object-cover rounded border border-border cursor-pointer"
+                    onClick={() => setPreviewPhoto(photo)}
                   />
+                  <button
+                    onClick={() => setPreviewPhoto(photo)}
+                    className="absolute inset-0 flex items-center justify-center bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity rounded"
+                    title="Preview"
+                  >
+                    <Eye className="h-5 w-5 text-white" />
+                  </button>
                   <button
                     onClick={() => removePhoto(index)}
                     className="absolute -top-1 -right-1 bg-destructive text-destructive-foreground rounded-full p-0.5 opacity-0 group-hover:opacity-100 transition-opacity"
@@ -425,6 +435,17 @@ export const FaceRegistration = ({ onComplete }: FaceRegistrationProps) => {
           )}
         </div>
       </div>
+
+      <Dialog open={!!previewPhoto} onOpenChange={(open) => !open && setPreviewPhoto(null)}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>Photo Preview</DialogTitle>
+          </DialogHeader>
+          {previewPhoto && (
+            <img src={previewPhoto} alt="Preview" className="w-full h-auto rounded" />
+          )}
+        </DialogContent>
+      </Dialog>
     </Card>
   );
 };
