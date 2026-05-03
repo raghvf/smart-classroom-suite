@@ -27,6 +27,7 @@ export const FaceRegistration = ({ onComplete }: FaceRegistrationProps) => {
   const [cameraReady, setCameraReady] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [showFlash, setShowFlash] = useState(false);
+  const [previewPhoto, setPreviewPhoto] = useState<string | null>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const { toast } = useToast();
