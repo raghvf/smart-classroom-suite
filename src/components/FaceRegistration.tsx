@@ -435,6 +435,17 @@ export const FaceRegistration = ({ onComplete }: FaceRegistrationProps) => {
           )}
         </div>
       </div>
+
+      <Dialog open={!!previewPhoto} onOpenChange={(open) => !open && setPreviewPhoto(null)}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>Photo Preview</DialogTitle>
+          </DialogHeader>
+          {previewPhoto && (
+            <img src={previewPhoto} alt="Preview" className="w-full h-auto rounded" />
+          )}
+        </DialogContent>
+      </Dialog>
     </Card>
   );
 };
