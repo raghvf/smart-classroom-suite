@@ -43,9 +43,6 @@ export const FaceRegistration = ({ onComplete }: FaceRegistrationProps) => {
 
   useEffect(() => {
     fetchStudents();
-    return () => {
-      stopCamera();
-    };
   }, []);
 
   const fetchStudents = async () => {
@@ -200,6 +197,12 @@ export const FaceRegistration = ({ onComplete }: FaceRegistrationProps) => {
     setCameraReady(false);
     setIsCapturing(false);
   };
+
+  useEffect(() => {
+    return () => {
+      stream?.getTracks().forEach(track => track.stop());
+    };
+  }, [stream]);
 
   const savePhotos = async () => {
     if (capturedPhotos.length === 0) {
