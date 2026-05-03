@@ -289,6 +289,11 @@ export const FaceRegistration = ({ onComplete }: FaceRegistrationProps) => {
         {isCapturing && (
           <div className="space-y-3">
             <div className="relative aspect-video bg-muted rounded-lg overflow-hidden">
+              {!cameraReady && (
+                <div className="absolute inset-0 z-10 flex items-center justify-center text-sm text-muted-foreground">
+                  Waiting for camera permission...
+                </div>
+              )}
               <video
                 ref={videoRef}
                 autoPlay
@@ -331,16 +336,29 @@ export const FaceRegistration = ({ onComplete }: FaceRegistrationProps) => {
               </div>
             </div>
 
-            {/* Additional capture button below */}
-            <Button 
-              onClick={capturePhoto} 
-              className="w-full" 
-              size="lg"
-              disabled={!cameraReady || capturedPhotos.length >= targetCaptures}
-            >
-              <Camera className="mr-2 h-5 w-5" />
-              📸 Manual Capture ({capturedPhotos.length}/{targetCaptures})
-            </Button>
+            <div className="grid grid-cols-3 gap-2">
+              <Button 
+                onClick={capturePhoto} 
+                size="lg"
+                disabled={!cameraReady || capturedPhotos.length >= targetCaptures}
+              >
+                <Camera className="mr-2 h-5 w-5" />
+                Manual Capture
+              </Button>
+              <Button
+                variant="outline"
+                size="lg"
+                onClick={() => setPreviewPhoto(capturedPhotos[capturedPhotos.length - 1])}
+                disabled={capturedPhotos.length === 0}
+              >
+                <Eye className="mr-2 h-5 w-5" />
+                Preview
+              </Button>
+              <Button variant="outline" size="lg" onClick={stopCamera}>
+                <X className="mr-2 h-5 w-5" />
+                Stop Camera
+              </Button>
+            </div>
           </div>
         )}
 
@@ -415,7 +433,7 @@ export const FaceRegistration = ({ onComplete }: FaceRegistrationProps) => {
             </Button>
           ) : (
             <>
-              <Button variant="outline" onClick={stopCamera} className="flex-1">
+              <Button variant="outline" onClick={stopCamera} className="flex-1 md:hidden">
                 <X className="mr-2 h-4 w-4" />
                 Stop Camera
               </Button>
